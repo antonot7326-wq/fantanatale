@@ -71,7 +71,7 @@ export default function MatchdaysScreen({ onNavigate, onBack }) {
       <Card title="Scegli la giornata">
         <div className="day-list">
           {dates.map((d) => (
-            <button key={d} className={`day-nav ${isToday(d) ? 'today' : ''}`} aria-current={d === selected} onClick={() => setSelected(d)}>
+            <button key={d} className={`day-nav ${isToday(d) ? 'today' : ''}`} aria-current={d === selected ? "true" : undefined} onClick={() => setSelected(d)}>
               {formatDate(d)}
             </button>
           ))}

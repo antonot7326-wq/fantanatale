@@ -67,7 +67,7 @@ export default function LineupsScreen({ onNavigate, onBack }) {
         {locked ? <Pill tone="muted">giornata già calcolata: solo lettura</Pill> : <Pill tone="good">puoi modificare</Pill>}
         <div className="day-list">
           {dates.map((d) => (
-            <button key={d} className={`day-nav ${isToday(d) ? 'today' : ''}`} aria-current={d === selected} onClick={() => setSelected(d)}>
+            <button key={d} className={`day-nav ${isToday(d) ? 'today' : ''}`} aria-current={d === selected ? "true" : undefined} onClick={() => setSelected(d)}>
               {formatDate(d)}
             </button>
           ))}
