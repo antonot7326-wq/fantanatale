@@ -1,70 +1,80 @@
 import React from 'react'
-import { useStore } from '../store'
-import { Section, EmptyHint } from '../components'
+import { useApp } from '../state/store'
+import { Card, Empty, PageTitle } from '../ui/parts'
 import { dateRange, formatDate } from '../lib/schedule'
 
-export default function StandingsScreen() {
-  const { state } = useStore()
+export default function StandingsScreen({ onBack }) {
+  const { state } = useApp()
   const { teams, config } = state
   const dates = dateRange(config.startDate, config.endDate)
   const computed = dates.filter((d) => state.results[d])
 
   if (teams.length < 2) {
-    return <EmptyHint icon="🏆">La classifica esiste quando ci sono almeno 2 squadre: dai un'occhiata al ⚙️ Setup.</EmptyHint>
+    return (
+      <main>
+        <PageTitle title="Classifica" onBack={onBack} />
+        <Card><Empty>La classifica compare quando ci sono almeno due squadre.</Empty></Card>
+      </main>
+    )
   }
 
   const rows = teams
-    .map((t) => {
-      const played = computed.filter((d) => state.results[d]?.details?.[t.id])
-      const pts = played.reduce((s, d) => s + (state.results[d].details[t.id]?.total ?? 0), 0)
-      return { team: t, played: played.length, pts, avg: played.length ? pts / played.length : 0 }
+    .map((team) => {
+      const played = computed.filter((d) => state.results[d]?.details?.[team.id])
+      const points = played.reduce((sum, d) => sum + (state.results[d].details[team.id]?.total ?? 0), 0)
+      return { team, played: played.length, points, average: played.length ? points / played.length : 0 }
     })
-    .sort((a, b) => b.pts - a.pts)
+    .sort((a, b) => b.points - a.points)
 
   return (
-    <>
-      <Section title={`Classifica a punti — ${computed.length} ${computed.length === 1 ? 'giornata calcolata' : 'giornate calcolate'}`}>
+    <main>
+      <PageTitle title="Classifica" subtitle={`${computed.length} giornate calcolate`} onBack={onBack} />
+
+      <Card title="Punti totali">
         {computed.length === 0 ? (
-          <EmptyHint icon="📅">Nessuna giornata ancora calcolata: l'host parte dalla scheda 📅 Giornate.</EmptyHint>
+          <Empty>Nessuna giornata calcolata: vai a Giornate e premi «Calcola giornata».</Empty>
         ) : (
-          <table className="table standings">
+          <table className="table">
             <thead>
               <tr>
-                <th>#</th><th>Squadra</th><th>Giornate</th><th>Punti</th><th>Media</th>
+                <th>Posizione</th>
+                <th>Squadra</th>
+                <th className="num">Giocate</th>
+                <th className="num">Punti</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={r.team.id} className={i === 0 ? 'first' : ''}>
-                  <td>{i === 0 ? '🥇' : i + 1}</td>
+                <tr key={r.team.id} className={i === 0 ? 'row-first' : ''}>
+                  <td>{i + 1}</td>
                   <td><strong>{r.team.name}</strong></td>
-                  <td>{r.played}</td>
-                  <td><strong>{r.pts}</strong></td>
-                  <td>{r.avg.toFixed(1)}</td>
+                  <td className="num">{r.played}</td>
+                  <td className="num"><strong>{r.points}</strong></td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-      </Section>
+      </Card>
 
       {computed.length > 0 && (
-        <Section title="Risultati giornata per giornata">
+        <Card title="Risultati di ogni giornata">
           <div className="rows">
             {computed.map((d) => (
               <div className="row" key={d}>
-                <strong className="date">{formatDate(d)}</strong>
+                <strong className="index">{formatDate(d)}</strong>
                 <span className="grow">
-                  {[...teams]
+                  {teams
+                    .slice()
                     .sort((a, b) => (state.results[d].details[b.id]?.total ?? 0) - (state.results[d].details[a.id]?.total ?? 0))
                     .map((t) => `${t.name} ${state.results[d].details[t.id]?.total ?? 0}`)
-                    .join(' · ')}
+                    .join(' \u00b7 ')}
                 </span>
               </div>
             ))}
           </div>
-        </Section>
+        </Card>
       )}
-    </>
+    </main>
   )
 }

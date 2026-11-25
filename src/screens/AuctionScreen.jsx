@@ -1,169 +1,108 @@
-import React, { useState } from 'react'
-import { useStore, creditsLeft } from '../store'
-import { Section, EmptyHint, Pill, NumInput } from '../components'
+import { useApp } from '../state/store'
+import { creditsLeft, playersOfTeam, isAuctionComplete } from '../state/selectors'
+import { Button, Card, Empty, PageTitle, SteppedList } from '../ui/parts'
+import AuctionLot from './AuctionLot'
 
-export default function AuctionScreen({ onDone }) {
-  const { state, update } = useStore()
+export default function AuctionScreen({ onNavigate, onBack }) {
+  const { state, update } = useApp()
   const { teams, players, config } = state
-  const [free, setFree] = useState('')
 
-  const lot = state.auctionLot
-  const unassigned = players.filter((p) => !p.teamId)
-  const lotPlayer = lot ? players.find((p) => p.id === lot.playerId) : null
-  const lotBidder = lot?.bidderId ? teams.find((t) => t.id === lot.bidderId) : null
-  const assignedOf = (teamId) => players.filter((p) => p.teamId === teamId).length
-  const auctionOver = state.auctionDone || (players.length > 0 && unassigned.length === 0)
-
-  const canBid = (team) =>
-    !!lot &&
-    creditsLeft(state, team) >= lot.bid + 1 &&
-    assignedOf(team.id) < config.formationSize &&
-    lot.bidderId !== team.id
-
-  const startLot = (playerId) => update((s) => {
-    s.auctionLot = { playerId, bid: 1, bidderId: null }
-    return s
-  })
-
-  const raise = (teamId, step) => update((s) => {
-    const l = s.auctionLot
-    if (!l) return s
-    l.bid = l.bid + step
-    l.bidderId = teamId
-    return s
-  })
-
-  const offerFree = () => {
-    const v = Number(free)
-    if (!lot || Number.isNaN(v) || v <= (lot.bid ?? 0)) {
-      alert('Inserisci un importo superiore all\'offerta corrente.')
-      return
+  const startLot = (playerId) => update((s) => ({ ...s, auctionLot: { playerId, bid: 1, bidderId: null } }))
+  const raise = (teamId, amount) => update((s) => ({
+    ...s,
+    auctionLot: { ...s.auctionLot, bid: s.auctionLot.bid + amount, bidderId: teamId },
+  }))
+  const offer = (teamId, amount) => update((s) => ({ ...s, auctionLot: { ...s.auctionLot, bid: amount, bidderId: teamId } }))
+  const sell = () => update((s) => {
+    const lot = s.auctionLot
+    const team = s.teams.find((t) => t.id === lot.bidderId)
+    const player = s.players.find((p) => p.id === lot.playerId)
+    if (!team || !player) return { ...s, auctionLot: null }
+    return {
+      ...s,
+      players: s.players.map((p) => (p.id === player.id ? { ...p, teamId: team.id, price: lot.bid } : p)),
+      teams: s.teams.map((t) => (t.id === team.id ? { ...t, spent: t.spent + lot.bid } : t)),
+      auctionLot: null,
     }
-    update((s) => {
-      s.auctionLot.bid = v
-      return s
-    })
-    setFree('')
-  }
-
-  const sell = (teamId) => update((s) => {
-    const l = s.auctionLot
-    if (!l) return s
-    const team = s.teams.find((t) => t.id === teamId)
-    const player = s.players.find((p) => p.id === l.playerId)
-    if (!team || !player) return s
-    player.teamId = team.id
-    player.price = l.bid
-    team.spent += l.bid
-    s.auctionLot = null
-    return s
   })
-
-  const cancelLot = () => update((s) => {
-    s.auctionLot = null
-    return s
-  })
-
-  const closeAuction = () => {
-    if (confirm('Chiudere l\'asta? Potrai comunque riassegnare giocatori a mano.')) {
-      update((s) => {
-        s.auctionDone = true
-        return s
-      })
-      onDone()
-    }
-  }
+  const cancelLot = () => update((s) => ({ ...s, auctionLot: null }))
+  const closeAuction = () => update((s) => ({ ...s, auctionDone: true, auctionLot: null }))
 
   if (teams.length < 2 || players.length === 0) {
     return (
-      <EmptyHint icon="🔨">
-        Per iniziare l'asta servono almeno <strong>2 squadre</strong> (scheda ⚙️ Setup) e almeno <strong>1 familiare</strong> (scheda 🎅).
-      </EmptyHint>
+      <main>
+        <PageTitle title="Asta" onBack={onBack} />
+        <Card>
+          <Empty>Prima servono le squadre (in Impostazioni) e i giocatori.</Empty>
+        </Card>
+      </main>
     )
   }
 
+  const free = players.filter((p) => !p.teamId)
+  const complete = isAuctionComplete(state)
+
+  const canBid = (team) => {
+    const lot = state.auctionLot
+    if (!lot) return false
+    if (lot.bidderId === team.id) return false
+    if (creditsLeft(state, team) < lot.bid) return false
+    if (playersOfTeam(state, team.id).length >= config.formationSize) return false
+    return true
+  }
+
   return (
-    <>
-      <Section title="Crediti residui">
-        <div className="credits">
+    <main>
+      <PageTitle title="Asta" subtitle="Acquistate i giocatori, uno alla volta" onBack={onBack} />
+
+      <Card title="Crediti e rose">
+        <div className="team-credits">
           {teams.map((t) => (
-            <div key={t.id} className={`credit-chip ${lot?.bidderId === t.id ? 'leading' : ''}`}>
-              <strong>{t.name}</strong>
-              <span>{creditsLeft(state, t)} cr</span>
-              <small>{assignedOf(t.id)}/{config.formationSize} in rosa</small>
+            <div key={t.id} className={`team-card ${state.auctionLot?.bidderId === t.id ? 'lead' : ''}`}>
+              <div className="name">{t.name}</div>
+              <div className="credits">{creditsLeft(state, t)} crediti</div>
+              <div className="count">
+                {playersOfTeam(state, t.id).length} giocatori su {config.formationSize}
+              </div>
             </div>
           ))}
         </div>
-      </Section>
+      </Card>
 
-      {lotPlayer && (
-        <Section title={`All'asta: ${lotPlayer.name}`}>
-          <div className="lot">
-            <div className="lot-bid">
-              {lotBidder ? (
-                <Pill tone="good">
-                  Rilancio di {lotBidder.name}: {lot.bid} cr
-                </Pill>
-              ) : (
-                <Pill tone="muted">Base d'asta: {lot.bid} cr — nessun rilancio ancora</Pill>
-              )}
-            </div>
-            <div className="lot-actions">
-              {teams.map((t) => (
-                <div key={t.id} className="bidder">
-                  <span>{t.name}</span>
-                  <div className="bidder-btns">
-                    <button className="btn small" disabled={!canBid(t)} onClick={() => raise(t.id, 1)}>+1</button>
-                    <button className="btn small" disabled={!canBid(t)} onClick={() => raise(t.id, 10)}>+10</button>
-                    <button
-                      className="btn small primary"
-                      disabled={!canBid(t) && !(creditsLeft(state, t) >= lot.bid && lot.bidderId !== t.id && assignedOf(t.id) < config.formationSize)}
-                      onClick={() => sell(t.id)}
-                      title={
-                        lotBidder
-                          ? lotBidder.id === t.id
-                            ? 'È già il miglior offerente'
-                            : `${lotBidder.name} ha offerto ${lot.bid} cr`
-                          : `Vendi alla base (${lot.bid} cr)`
-                      }
-                    >
-                      Acquista
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="btn-row">
-              <input className="input grow" type="number" min={0} value={free} placeholder="Offerta libera…" onChange={(e) => setFree(e.target.value)} />
-              <button className="btn" onClick={offerFree}>Offri</button>
-              <button className="btn ghost danger" onClick={cancelLot}>Annulla lotto</button>
-            </div>
-          </div>
-        </Section>
+      {state.auctionLot && (
+        <AuctionLot
+          canBid={canBid}
+          onRaise={raise}
+          onOffer={offer}
+          onSell={sell}
+          onCancel={cancelLot}
+        />
       )}
 
-      <Section title={`Giocatori liberi (${unassigned.length})`}>
-        {unassigned.length === 0 ? (
-          <EmptyHint icon="🎉">Tutti i familiari hanno una squadra! Passa alle formazioni.</EmptyHint>
+      <Card title={`Giocatori ancora liberi (${free.length})`}>
+        {free.length === 0 ? (
+          <Empty>Tutti i giocatori hanno una squadra.</Empty>
         ) : (
           <div className="rows">
-            {unassigned.map((p) => (
+            {free.map((p) => (
               <div className="row" key={p.id}>
                 <strong className="grow">{p.name}</strong>
-                <button className="btn small" disabled={!!lot} onClick={() => startLot(p.id)}>
+                <Button variant="primary" disabled={Boolean(state.auctionLot)} onClick={() => startLot(p.id)}>
                   Metti all'asta
-                </button>
+                </Button>
               </div>
             ))}
           </div>
         )}
-      </Section>
+      </Card>
 
-      <div className="btn-row continue">
-        <button className="btn primary" onClick={closeAuction}>
-          {auctionOver ? 'Chiudi ufficialmente l\'asta ✅' : 'Chiudi asta (giocatori rimasti restano liberi)'}
-        </button>
+      <div className="btn-row">
+        <Button variant="primary" onClick={closeAuction}>
+          {complete ? 'Passa alle formazioni' : 'Termina l\u2019asta e vai alle formazioni'}
+        </Button>
       </div>
-    </>
+
+      <SteppedList current="auction" onGo={onNavigate} />
+    </main>
   )
 }

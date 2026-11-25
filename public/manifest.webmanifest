@@ -1,18 +1,17 @@
 {
-  "name": "FantaNatale — Fantacalcio di famiglia",
+  "name": "FantaNatale — fantacalcio di famiglia",
   "short_name": "FantaNatale",
-  "description": "Fantacalcio natalizio con i familiari come giocatori: asta con crediti, formazioni da 4, bonus e malus, una giornata per ogni giorno vero.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0b3d2e",
-  "theme_color": "#0b3d2e",
+  "description": "Fantacalcio natalizio con i familiari come giocatori: asta con crediti, formazioni, bonus e malus, una giornata per ogni giorno reale.",
   "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f3f24",
+  "theme_color": "#0f3f24",
   "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

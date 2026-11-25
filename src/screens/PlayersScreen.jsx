@@ -1,92 +1,97 @@
-import React, { useState } from 'react'
-import { useStore, uid } from '../store'
-import { Section, EmptyHint, Pill } from '../components'
+import React from 'react'
+import { useApp, newId } from '../state/store'
+import { Button, Card, TextInput, Pill, Empty, PageTitle, SteppedList } from '../ui/parts'
 
-export default function PlayersScreen({ onDone }) {
-  const { state, update } = useStore()
-  const [name, setName] = useState('')
+export default function PlayersScreen({ onNavigate, onBack }) {
+  const { state, update } = useApp()
 
-  const teamName = (p) => state.teams.find((t) => t.id === p.teamId)?.name ?? null
+  const teamName = (player) => state.teams.find((t) => t.id === player.teamId)?.name
 
-  const add = () => {
-    const n = name.trim()
-    if (!n) return
-    if (state.players.some((p) => p.name.toLowerCase() === n.toLowerCase())) {
-      alert('Hai già inserito un familiare con questo nome.')
-      return
-    }
-    update((s) => {
-      s.players.push({ id: uid(), name: n, teamId: null })
+  const add = (name) => update((s) => {
+    const clean = name.trim()
+    if (!clean) return s
+    if (s.players.some((p) => p.name.toLowerCase() === clean.toLowerCase())) {
+      alert('Questo nome esiste già.')
       return s
-    })
-    setName('')
-  }
-
-  const rename = (id, v) => update((s) => {
-    const p = s.players.find((x) => x.id === id)
-    if (p) p.name = v
-    return s
+    }
+    return { ...s, players: [...s.players, { id: newId(), name: clean, teamId: null }] }
   })
 
+  const rename = (id, name) => update((s) => ({ ...s, players: s.players.map((p) => (p.id === id ? { ...p, name } : p)) }))
+
   const remove = (id) => update((s) => {
-    const p = s.players.find((x) => x.id === id)
-    if (p && p.teamId) {
-      const team = s.teams.find((t) => t.id === p.teamId)
-      if (team) team.spent = Math.max(0, team.spent - (p.price ?? 0))
+    const player = s.players.find((p) => p.id === id)
+    if (player?.teamId) {
+      const team = s.teams.find((t) => t.id === player.teamId)
+      if (team) team.spent = Math.max(0, team.spent - (player.price ?? 0))
     }
-    s.players = s.players.filter((x) => x.id !== id)
-    return s
+    return { ...s, players: s.players.filter((p) => p.id !== id) }
   })
 
   const release = (id) => update((s) => {
-    const p = s.players.find((x) => x.id === id)
-    if (p && p.teamId) {
-      const team = s.teams.find((t) => t.id === p.teamId)
-      if (team) team.spent = Math.max(0, team.spent - (p.price ?? 0))
-      p.teamId = null
-      p.price = undefined
-    }
-    return s
+    const player = s.players.find((p) => p.id === id)
+    if (!player?.teamId) return s
+    const team = s.teams.find((t) => t.id === player.teamId)
+    if (team) team.spent = Math.max(0, team.spent - (player.price ?? 0))
+    return { ...s, players: s.players.map((p) => (p.id === id ? { ...p, teamId: null, price: undefined } : p)) }
   })
 
   return (
-    <>
-      <Section title={`Familiari-giocatori (${state.players.length})`}>
-        <div className="btn-row">
-          <input
-            className="input grow"
-            value={name}
-            placeholder="Nome del familiare (es. Mamma, Zio Pino…)"
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && add()}
-          />
-          <button className="btn primary" onClick={add}>+ Aggiungi</button>
-        </div>
+    <main>
+      <PageTitle
+        title="Giocatori"
+        subtitle="Qui vanno i nomi dei tuoi familiari: nessun nome è predefinito"
+        onBack={onBack}
+      />
+
+      <Card title={`Elenco (${state.players.length})`}>
+        <NewPlayerRow onAdd={add} />
         {state.players.length === 0 && (
-          <EmptyHint icon="🎅">Inserisci qui i tuoi {state.config.formationSize * Math.max(1, state.teams.length)} familiari — io non ne invento nessuno.</EmptyHint>
+          <Empty>Nessun giocatore. Aggiungi i tuoi familiari con il campo qui sopra.</Empty>
         )}
         <div className="rows">
           {state.players.map((p, i) => (
             <div className="row" key={p.id}>
-              <span className="idx">{i + 1}</span>
-              <input className="input" value={p.name} onChange={(e) => rename(p.id, e.target.value)} />
+              <span className="index">{i + 1}</span>
+              <TextInput className="grow" value={p.name} onChange={(e) => rename(p.id, e.target.value)} />
               {teamName(p) ? (
                 <>
                   <Pill tone="good">{teamName(p)}</Pill>
-                  <button className="btn small ghost" onClick={() => release(p.id)}>Svincola</button>
+                  <Button variant="ghost" onClick={() => release(p.id)}>Libera</Button>
                 </>
               ) : (
-                <Pill tone="muted">svincolato</Pill>
+                <Pill tone="muted">libero</Pill>
               )}
-              <button className="btn danger ghost" onClick={(e) => { e.currentTarget.blur(); remove(p.id) }}>✕</button>
+              <Button variant="danger" onClick={() => remove(p.id)}>Elimina</Button>
             </div>
           ))}
         </div>
-        <div className="hint">Totale familiari: <strong>{state.players.length}</strong> — cancella o rinomina liberamente prima dell'asta.</div>
-      </Section>
-      {state.players.length > 0 && (
-        <button className="btn primary continue" onClick={onDone}>Prossimo passo: bonus e malus ⭐</button>
-      )}
-    </>
+      </Card>
+
+      <SteppedList current="players" onGo={onNavigate} />
+    </main>
+  )
+}
+
+function NewPlayerRow({ onAdd }) {
+  const [name, setName] = React.useState('')
+  return (
+    <div className="form-row">
+      <TextInput
+        className="grow"
+        value={name}
+        placeholder="Scrivi il nome del familiare"
+        onChange={setName}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            onAdd(name)
+            setName('')
+          }
+        }}
+      />
+      <Button variant="primary" onClick={() => { onAdd(name); setName('') }}>
+        Aggiungi giocatore
+      </Button>
+    </div>
   )
 }
