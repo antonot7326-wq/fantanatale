@@ -60,3 +60,12 @@ a schermo intero come le altre, con icona ⚽🎄.
 
 Prototipo funzionante. Da definire insieme (rimandato a domani): la lista finale dei bonus/malus
 natalizi. La schermata ⭐ è già pronta per accoglierli.
+
+## Screenshot (dati dimostrativi, non reali)
+
+| | |
+|---|---|
+| ![Setup](docs/screenshots/01-setup.png) | ![Familiari](docs/screenshots/02-familiari.png) |
+| ![Bonus/Malus](docs/screenshots/03-bonus-malus.png) | ![Asta](docs/screenshots/04-asta.png) |
+| ![Formazioni](docs/screenshots/05-formazioni.png) | ![Giornate](docs/screenshots/06-giornate.png) |
+| ![Classifica](docs/screenshots/07-classifica.png) | ![Marcatori](docs/screenshots/08-marcatori.png) |
