@@ -32,6 +32,8 @@ export function Empty({ children }) {
   )
 }
 
+// Per i campi di testo e data: un vero elemento <label> (il tocco sul testo
+// porta al campo). Per gli stepper usare StepperField, che non è una label (B8).
 export function Field({ label, help, children }) {
   return (
     <label className="field">
@@ -42,10 +44,21 @@ export function Field({ label, help, children }) {
   )
 }
 
-export function TextInput({ value, onChange, placeholder, ...rest }) {
+export function StepperField({ label, help, children }) {
+  return (
+    <div className="field">
+      <span className="field-label">{label}</span>
+      {children}
+      {help && <span className="field-help">{help}</span>}
+    </div>
+  )
+}
+
+export function TextInput({ value, onChange, placeholder, className = '', ...rest }) {
+  const cls = ['input', className].filter(Boolean).join(' ')
   return (
     <input
-      className="input"
+      className={cls}
       type="text"
       value={value}
       placeholder={placeholder}
@@ -55,10 +68,11 @@ export function TextInput({ value, onChange, placeholder, ...rest }) {
   )
 }
 
-export function DateInput({ value, onChange, ...rest }) {
+export function DateInput({ value, onChange, className = '', ...rest }) {
+  const cls = ['input', className].filter(Boolean).join(' ')
   return (
     <input
-      className="input"
+      className={cls}
       type="date"
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -69,17 +83,19 @@ export function DateInput({ value, onChange, ...rest }) {
 
 const clampInt = (v, min, max) => Math.min(max ?? Infinity, Math.max(min ?? 0, Math.round(Number(v) || 0)))
 
+// onChange riceve direttamente il numero (contratto unico, A1).
 export function Stepper({ value, onChange, min = 0, max = 999, step = 1, label }) {
-  const set = (v) => onChange({ target: { value: v } })
+  const set = (v) => onChange(clampInt(v, min, max))
+  const thing = label ? `${label}: ` : ''
   return (
     <span className="stepper" role="group" aria-label={label}>
-      <button type="button" className="stepper-btn" onClick={() => set(clampInt(value - step, min, max))} aria-label="diminuisci">
+      <button type="button" className="stepper-btn" onClick={() => set(Number(value) - step)} aria-label={`${thing}diminuisci`}>
         −
       </button>
       <span className="stepper-value" aria-live="polite">
         {value}
       </span>
-      <button type="button" className="stepper-btn" onClick={() => set(clampInt(Number(value) + step, min, max))} aria-label="aumenta">
+      <button type="button" className="stepper-btn" onClick={() => set(Number(value) + step)} aria-label={`${thing}aumenta`}>
         +
       </button>
     </span>

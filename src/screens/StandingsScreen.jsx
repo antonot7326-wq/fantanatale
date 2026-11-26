@@ -22,9 +22,16 @@ export default function StandingsScreen() {
     .map((team) => {
       const played = computed.filter((d) => state.results[d]?.details?.[team.id])
       const points = played.reduce((sum, d) => sum + (state.results[d].details[team.id]?.total ?? 0), 0)
-      return { team, played: played.length, points, average: played.length ? points / played.length : 0 }
+      return { team, played: played.length, points }
     })
-    .sort((a, b) => b.points - a.points)
+    .sort((a, b) => b.points - a.points || a.team.name.localeCompare(b.team.name, 'it'))
+
+  // Pari merito: stessa posizione per chi ha gli stessi punti (C2)
+  const positionOf = (index) => {
+    const target = rows[index]
+    const first = rows.findIndex((r) => r.points === target.points)
+    return first + 1
+  }
 
   return (
     <main>
@@ -34,26 +41,33 @@ export default function StandingsScreen() {
         {computed.length === 0 ? (
           <Empty>Nessuna giornata calcolata: vai a Giornate e premi «Calcola giornata».</Empty>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Posizione</th>
-                <th>Squadra</th>
-                <th className="num">Giocate</th>
-                <th className="num">Punti</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={r.team.id} className={i === 0 ? 'row-first' : ''}>
-                  <td><span className={`pos-badge ${i === 0 ? 'first' : ''}`}>{i + 1}</span></td>
-                  <td><strong>{r.team.name}</strong></td>
-                  <td className="num">{r.played}</td>
-                  <td className="num"><strong>{r.points}</strong></td>
+          <>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Posizione</th>
+                  <th>Squadra</th>
+                  <th className="num">Giocate</th>
+                  <th className="num">Punti</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={r.team.id} className={i === 0 ? 'row-first' : ''}>
+                    <td><span className={`pos-badge ${i === 0 ? 'first' : ''}`}>{positionOf(i)}</span></td>
+                    <td><strong>{r.team.name}</strong></td>
+                    <td className="num">{r.played}</td>
+                    <td className="num"><strong>{r.points}</strong></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="note">
+              Regolamento: vince chi totalizza più punti nell'intero periodo. Le sfide del giorno mostrano
+              chi supera chi, ma la classifica conta solo i punti. Chi riposa schiera comunque la formazione
+              e prende i suoi punti.
+            </p>
+          </>
         )}
       </Card>
 
@@ -68,7 +82,7 @@ export default function StandingsScreen() {
                     .slice()
                     .sort((a, b) => (state.results[d].details[b.id]?.total ?? 0) - (state.results[d].details[a.id]?.total ?? 0))
                     .map((t) => `${t.name} ${state.results[d].details[t.id]?.total ?? 0}`)
-                    .join(' \u00b7 ')}
+                    .join(' · ')}
                 </span>
               </div>
             ))}

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useApp, newId } from '../state/store'
-import { Button, Card, TextInput, Empty, PageTitle, Stepper } from '../ui/parts'
+import { Button, Card, TextInput, Empty, PageTitle, Stepper, StepperField } from '../ui/parts'
+import { useDialog } from '../ui/dialog'
 import EventRow from './EventRow'
 
 export function useEvents() {
@@ -10,6 +11,10 @@ export function useEvents() {
     addEvent: (label, points) => update((s) => ({
       ...s,
       events: [...s.events, { id: newId(), label, points }],
+    })),
+    editEvent: (id, label, points) => update((s) => ({
+      ...s,
+      events: s.events.map((e) => (e.id === id ? { ...e, label, points } : e)),
     })),
     removeEvent: (id) => update((s) => ({ ...s, events: s.events.filter((e) => e.id !== id) })),
   }
@@ -51,13 +56,14 @@ export default function RulesScreen({ onBack }) {
 
 function NewEventCard() {
   const { addEvent } = useEvents()
+  const dialog = useDialog()
   const [label, setLabel] = React.useState('')
   const [points, setPoints] = React.useState(5)
 
   const submit = () => {
     const clean = label.trim()
     if (!clean) {
-      alert('Scrivi il nome della regola (esempio: Gol della cena).')
+      dialog.alert('Scrivi il nome della regola (esempio: Gol della cena).')
       return
     }
     addEvent(clean, points)
@@ -72,10 +78,9 @@ function NewEventCard() {
           <span className="field-label">Nome della regola</span>
           <TextInput value={label} onChange={setLabel} placeholder="Esempio: gol della cena" />
         </div>
-        <div className="field">
-          <span className="field-label">Punti (negativi = malus)</span>
-          <Stepper label="punti" value={points} step={1} min={-30} max={30} onChange={(e) => setPoints(Number(e.target.value))} />
-        </div>
+        <StepperField label="Punti (negativi = malus)">
+          <Stepper label="punti" value={points} step={1} min={-30} max={30} onChange={(value) => setPoints(Number(value))} />
+        </StepperField>
       </div>
       <div className="btn-row">
         <Button variant="primary" onClick={submit}>Aggiungi regola</Button>

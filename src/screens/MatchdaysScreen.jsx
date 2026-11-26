@@ -2,16 +2,20 @@ import React, { useMemo, useState } from 'react'
 import { useApp } from '../state/store'
 import { isAuctionComplete } from '../state/selectors'
 import { Button, Card, Empty, PageTitle } from '../ui/parts'
-import { dateRange, formatDate, isToday, scheduleForDate } from '../lib/schedule'
+import { useDialog } from '../ui/dialog'
+import { dateRange, formatDate, isToday, todayKey, scheduleForDate } from '../lib/schedule'
+import { lineupFor } from '../lib/data'
 import { simulateMatchday } from '../lib/sim'
 import DayCard from './DayCard'
 
 export default function MatchdaysScreen({ onNavigate }) {
   const { state, update } = useApp()
+  const dialog = useDialog()
   const { teams, players, config } = state
   const dates = useMemo(() => dateRange(config.startDate, config.endDate), [config.startDate, config.endDate])
-  const today = new Date().toISOString().slice(0, 10)
-  const [selected, setSelected] = useState(dates.includes(today) ? today : dates[0])
+  const today = todayKey()
+  const [requested, setSelected] = useState(dates.includes(today) ? today : dates[0])
+  const selected = dates.includes(requested) ? requested : (dates[0] ?? '')
 
   if (teams.length < 2 || players.length === 0) {
     return (
@@ -32,31 +36,44 @@ export default function MatchdaysScreen({ onNavigate }) {
   }
 
   const dayIndex = dates.indexOf(selected)
+  const pairs = scheduleForDate(teams.map((t) => t.id), selected, dayIndex)
 
-  const compute = () => update((s) => {
-    const lineups = {}
-    s.teams.forEach((t) => {
-      const chosen = s.lineups[selected]?.[t.id] ?? previousLineup(s, selected, t.id)
-      lineups[t.id] = chosen.slice(0, s.config.formationSize)
-    })
-    const incomplete = s.teams.filter((t) => lineups[t.id].length < s.config.formationSize)
-    if (incomplete.length && !confirm(`Attenzione: queste squadre non hanno la formazione completa: ${incomplete.map((t) => t.name).join(', ')}. Calcolare comunque?`)) {
-      return s
+  // Le verifiche e le domande stanno fuori dall'aggiornamento (A11)
+  const compute = async () => {
+    const incomplete = teams.filter((t) => lineupFor(state, selected, t.id).length < config.formationSize)
+    if (incomplete.length) {
+      const ok = await dialog.confirm(
+        `Attenzione: queste squadre non hanno la formazione completa: ${incomplete.map((t) => t.name).join(', ')}. Calcolare comunque?`,
+        { confirmLabel: 'Calcola comunque' },
+      )
+      if (!ok) return
     }
-    const result = simulateMatchday({ config: s.config, teams: s.teams, players: s.players, dateKey: selected, lineups, assignments: s.assignments?.[selected] ?? {} })
-    return { ...s, results: { ...s.results, [selected]: result } }
-  })
+    update((s) => {
+      const lineups = {}
+      s.teams.forEach((t) => {
+        lineups[t.id] = lineupFor(s, selected, t.id).slice(0, s.config.formationSize)
+      })
+      const result = simulateMatchday({
+        config: s.config,
+        teams: s.teams,
+        players: s.players,
+        dateKey: selected,
+        lineups,
+        assignments: s.assignments?.[selected] ?? {},
+        pairs: scheduleForDate(s.teams.map((t) => t.id), selected, dayIndex),
+      })
+      return { ...s, results: { ...s.results, [selected]: result } }
+    })
+  }
 
+  // Annulla la giornata ma conserva le assegnazioni dei bonus (B5)
   const removeResult = () => update((s) => {
     const rest = { ...s.results }
     delete rest[selected]
-    const assignments = { ...s.assignments }
-    delete assignments[selected]
-    return { ...s, results: rest, assignments }
+    return { ...s, results: rest }
   })
 
   const result = state.results[selected]
-  const pairs = scheduleForDate(teams.map((t) => t.id), selected, dayIndex)
 
   return (
     <main>
@@ -82,7 +99,6 @@ export default function MatchdaysScreen({ onNavigate }) {
       <DayCard
         dateKey={selected}
         today={isToday(selected)}
-        index={dayIndex}
         teams={teams}
         pairs={pairs}
         result={result}
@@ -96,13 +112,4 @@ export default function MatchdaysScreen({ onNavigate }) {
       </div>
     </main>
   )
-}
-
-function previousLineup(s, dateKey, teamId) {
-  const keys = Object.keys(s.lineups).filter((k) => k < dateKey).sort()
-  for (let i = keys.length - 1; i >= 0; i--) {
-    const prev = s.lineups[keys[i]]?.[teamId]
-    if (prev && prev.length) return prev
-  }
-  return []
 }

@@ -6,16 +6,16 @@ export function playersOfTeam(state, teamId) {
   return state.players.filter((p) => p.teamId === teamId)
 }
 
-export function rosterNames(state, ids) {
-  return ids.map((id) => state.players.find((p) => p.id === id)?.name ?? '?')
+export function rosterSize(state) {
+  return Math.max(state.config.formationSize, state.config.rosterSize ?? state.config.formationSize)
 }
 
 export function isAuctionComplete(state) {
-  const { players, teams, config, auctionDone } = state
+  const { players, teams, auctionDone } = state
   if (auctionDone) return true
   if (players.length === 0) return false
   const free = players.filter((p) => !p.teamId).length
   if (free === 0) return true
-  return teams.every((t) => playersOfTeam(state, t.id).length >= config.formationSize)
+  const size = rosterSize(state)
+  return teams.every((t) => playersOfTeam(state, t.id).length >= size)
 }
-

@@ -3,14 +3,17 @@ import { useApp } from '../state/store'
 import { playersOfTeam } from '../state/selectors'
 import { lineupFor } from '../lib/data'
 import { Button, Card, Empty, Pill, PageTitle } from '../ui/parts'
-import { dateRange, formatDate, isToday } from '../lib/schedule'
+import { useDialog } from '../ui/dialog'
+import { dateRange, formatDate, isToday, todayKey } from '../lib/schedule'
 
 export default function LineupsScreen({ onNavigate, onBack }) {
   const { state, update } = useApp()
+  const dialog = useDialog()
   const { teams, players, config } = state
   const dates = useMemo(() => dateRange(config.startDate, config.endDate), [config.startDate, config.endDate])
-  const today = new Date().toISOString().slice(0, 10)
-  const [selected, setSelected] = useState(dates.includes(today) ? today : dates[0])
+  const today = todayKey()
+  const [requested, setSelected] = useState(dates.includes(today) ? today : dates[0])
+  const selected = dates.includes(requested) ? requested : (dates[0] ?? '')
 
   if (teams.length < 2 || players.length === 0) {
     return (
@@ -32,32 +35,31 @@ export default function LineupsScreen({ onNavigate, onBack }) {
 
   const locked = Boolean(state.results[selected])
 
-  const toggle = (teamId, playerId) => update((s) => {
-    const dayLineups = { ...(s.lineups[selected] ?? {}) }
-    const current = dayLineups[teamId] ?? []
-    if (current.includes(playerId)) {
-      dayLineups[teamId] = current.filter((x) => x !== playerId)
-    } else {
-      if (current.length >= s.config.formationSize) {
-        alert(`Massimo ${s.config.formationSize} giocatori. Modifica il numero nelle Impostazioni se serve.`)
-        return s
-      }
-      dayLineups[teamId] = [...current, playerId]
+  // La formazione di partenza è quella ereditata (B3): il primo clic modifica
+  // la formazione che vedi in campo, non la azzera.
+  const toggle = async (teamId, playerId) => {
+    if (locked) return
+    const current = lineupFor(state, selected, teamId)
+    if (!current.includes(playerId) && current.length >= config.formationSize) {
+      dialog.alert(`Massimo ${config.formationSize} giocatori. Modifica il numero nelle Impostazioni se serve.`, { title: 'Formazione completa' })
+      return
     }
-    return { ...s, lineups: { ...s.lineups, [selected]: dayLineups } }
-  })
+    update((s) => {
+      const next = current.includes(playerId)
+        ? current.filter((x) => x !== playerId)
+        : [...current, playerId]
+      return { ...s, lineups: { ...s.lineups, [selected]: { ...(s.lineups[selected] ?? {}), [teamId]: next } } }
+    })
+  }
 
-  const copyPrevious = (teamId) => update((s) => {
-    const keys = Object.keys(s.lineups).filter((k) => k < selected).sort()
-    for (let i = keys.length - 1; i >= 0; i--) {
-      const prev = s.lineups[keys[i]]?.[teamId]
-      if (prev && prev.length) {
-        return { ...s, lineups: { ...s.lineups, [selected]: { ...(s.lineups[selected] ?? {}), [teamId]: [...prev] } } }
-      }
+  const copyPrevious = async (teamId) => {
+    const inherited = lineupFor(state, selected, teamId)
+    if (!inherited.length) {
+      dialog.alert('Non c’è nessuna formazione precedente da copiare.')
+      return
     }
-    alert('Non c\u2019\u00e8 nessuna formazione precedente da copiare.')
-    return s
-  })
+    update((s) => ({ ...s, lineups: { ...s.lineups, [selected]: { ...(s.lineups[selected] ?? {}), [teamId]: [...inherited] } } }))
+  }
 
   return (
     <main>
@@ -95,8 +97,8 @@ export default function LineupsScreen({ onNavigate, onBack }) {
 function TeamLineup({ team, selectedDay, locked, onToggle, onCopy }) {
   const { state } = useApp()
   const roster = playersOfTeam(state, team.id)
-  const chosen = state.lineups[selectedDay]?.[team.id] ?? lineupFor(state, selectedDay, team.id)
-  const inherited = !state.lineups[selectedDay]?.[team.id] && chosen.length > 0
+  const chosen = lineupFor(state, selectedDay, team.id)
+  const inherited = !state.lineups[selectedDay]?.[team.id]?.length && chosen.length > 0
 
   return (
     <Card

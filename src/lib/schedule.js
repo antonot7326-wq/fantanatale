@@ -1,4 +1,12 @@
 // Calendario: ogni giorno reale del periodo natalizio è una giornata.
+// "Oggi" è sempre calcolato in ora locale, mai in UTC (A9).
+
+const pad = (n) => String(n).padStart(2, '0')
+
+export const toDateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+export const todayKey = () => toDateKey(new Date())
+
 export function dateRange(startDate, endDate) {
   const out = []
   const d = new Date(`${startDate}T12:00:00`)
@@ -11,8 +19,6 @@ export function dateRange(startDate, endDate) {
   return out
 }
 
-export const toDateKey = (d) => d.toISOString().slice(0, 10)
-
 export function formatDate(dateKey) {
   if (!dateKey) return ''
   const d = new Date(`${dateKey}T12:00:00`)
@@ -20,7 +26,7 @@ export function formatDate(dateKey) {
 }
 
 export function isToday(dateKey) {
-  return dateKey === toDateKey(new Date())
+  return dateKey === todayKey()
 }
 
 // Round-robin col metodo del cerchio; con squadre dispari una squadra riposa per turno.
@@ -43,6 +49,10 @@ export function scheduleForDate(teamIds, dateKey, index) {
   const rounds = roundRobin(teamIds)
   if (!rounds.length) return []
   const round = rounds[index % rounds.length]
-  const mirrored = index >= rounds.length
-  return round.map(([a, b]) => (mirrored ? [b, a] : [a, b]))
+  const mirrored = Math.floor(index / rounds.length) % 2 === 1
+  return round.map(([a, b]) => {
+    const pair = mirrored ? [b, a] : [a, b]
+    // il riposo sta sempre a destra (B2)
+    return pair[0] == null && pair[1] != null ? [pair[1], null] : pair
+  })
 }

@@ -1,39 +1,47 @@
 import React, { useState } from 'react'
 import { useApp, newId } from '../state/store'
-import { Button, Card, Empty, Pill, TextInput, Stepper } from '../ui/parts'
+import { Button, Card, Empty, Pill, TextInput, Stepper, StepperField } from '../ui/parts'
 import { lineupFor } from '../lib/data'
+import { recomputeDay } from '../lib/sim'
 
 export default function AssignPanel({ dateKey }) {
   const { state, update } = useApp()
   const rules = state.events
-  const teamsWithLineup = state.teams.filter((t) => (state.lineups[dateKey]?.[t.id] ?? lineupFor(state, dateKey, t.id)).length > 0)
+  const teamsWithLineup = state.teams.filter((t) => lineupFor(state, dateKey, t.id).length > 0)
 
   const dayAssignments = state.assignments[dateKey] ?? {}
 
-  const toggleRule = (playerId, rule) => update((s) => {
+  // Ogni cambio di assegnazione ricalcola anche i totali se la giornata è già
+  // stata calcolata, tenendo gli stessi punti base (B5).
+  const changeAssignments = (mutate) => update((s) => {
     const day = { ...(s.assignments[dateKey] ?? {}) }
-    const list = [...(day[playerId] ?? [])]
-    const idx = list.findIndex((x) => x.label === rule.label && x.points === rule.points)
-    if (idx >= 0) list.splice(idx, 1)
-    else list.push({ label: rule.label, points: rule.points })
-    day[playerId] = list
-    return { ...s, assignments: { ...s.assignments, [dateKey]: day } }
+    mutate(day)
+    const next = { ...s, assignments: { ...s.assignments, [dateKey]: day } }
+    if (s.results[dateKey]) {
+      next.results = { ...s.results, [dateKey]: recomputeDay(s.results[dateKey], day) }
+    }
+    return next
   })
 
-  const addCustom = (playerId, label, points) => update((s) => {
-    const day = { ...(s.assignments[dateKey] ?? {}) }
+  // Le regole si riconoscono per id, non per nome+punti (B14)
+  const toggleRule = (playerId, rule) => changeAssignments((day) => {
+    const list = [...(day[playerId] ?? [])]
+    const idx = list.findIndex((x) => x.ruleId === rule.id)
+    if (idx >= 0) list.splice(idx, 1)
+    else list.push({ id: newId(), ruleId: rule.id, label: rule.label, points: rule.points })
+    day[playerId] = list
+  })
+
+  const addCustom = (playerId, label, points) => changeAssignments((day) => {
     const list = [...(day[playerId] ?? [])]
     list.push({ id: newId(), label: label.trim() || 'Bonus', points })
     day[playerId] = list
-    return { ...s, assignments: { ...s.assignments, [dateKey]: day } }
   })
 
-  const removeOne = (playerId, index) => update((s) => {
-    const day = { ...(s.assignments[dateKey] ?? {}) }
+  const removeOne = (playerId, index) => changeAssignments((day) => {
     const list = [...(day[playerId] ?? [])]
     list.splice(index, 1)
     day[playerId] = list
-    return { ...s, assignments: { ...s.assignments, [dateKey]: day } }
   })
 
   if (teamsWithLineup.length === 0) {
@@ -48,9 +56,10 @@ export default function AssignPanel({ dateKey }) {
     <Card title="Chi prende bonus e malus">
       <p className="note">
         Tocca una regola per assegnarla o toglierla a quel giocatore. Niente è casuale: decidi tu.
+        {state.results[dateKey] ? ' I punteggi si aggiornano da soli, senza cambiare i punti base.' : ''}
       </p>
       {teamsWithLineup.map((team) => {
-        const ids = state.lineups[dateKey]?.[team.id] ?? lineupFor(state, dateKey, team.id)
+        const ids = lineupFor(state, dateKey, team.id)
         return (
           <div key={team.id} className="assign-team">
             <h3>{team.name}</h3>
@@ -70,7 +79,7 @@ export default function AssignPanel({ dateKey }) {
                     )}
                   </div>
                   {assigned.map((x, i) => (
-                    <span key={i} className={`ev ${x.points >= 0 ? 'ev-plus' : 'ev-minus'}`}>
+                    <span key={x.id ?? i} className={`ev ${x.points >= 0 ? 'ev-plus' : 'ev-minus'}`}>
                       {x.label} ({x.points > 0 ? '+' : ''}{x.points})
                       <button
                         type="button"
@@ -81,7 +90,7 @@ export default function AssignPanel({ dateKey }) {
                     </span>
                   ))}
                   {rules.map((rule) => {
-                    const on = assigned.some((x) => x.label === rule.label && x.points === rule.points)
+                    const on = assigned.some((x) => x.ruleId === rule.id)
                     return (
                       <button
                         key={rule.id}
@@ -123,8 +132,11 @@ function CustomAdd({ onAdd }) {
         placeholder="Motivo"
         onChange={setLabel}
         style={{ maxWidth: '9rem' }}
+        aria-label="Motivo del bonus o malus"
       />
-      <Stepper label="punti" value={points} min={-30} max={30} step={1} onChange={(e) => setPoints(Number(e.target.value))} />
+      <StepperField label="Punti">
+        <Stepper label="punti" value={points} min={-30} max={30} step={1} onChange={(value) => setPoints(Number(value))} />
+      </StepperField>
       <Button
         variant="primary"
         onClick={() => {

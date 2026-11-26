@@ -1,6 +1,6 @@
 import React from 'react'
 import { useApp } from '../state/store'
-import { creditsLeft } from '../state/selectors'
+import { creditsLeft, isAuctionComplete } from '../state/selectors'
 import { Card, Pill, Button } from '../ui/parts'
 import { dateRange, formatDate, isToday, scheduleForDate } from '../lib/schedule'
 
@@ -8,15 +8,15 @@ export default function HomeScreen({ onNavigate }) {
   const { state } = useApp()
   const { config, teams, players, results } = state
   const dates = dateRange(config.startDate, config.endDate)
-  const today = new Date().toISOString().slice(0, 10)
   const computed = dates.filter((d) => results[d])
   const nextDate = dates.find((d) => !results[d]) ?? null
   const dayIndex = nextDate ? dates.indexOf(nextDate) : -1
   const pairs = nextDate && teams.length >= 2 ? scheduleForDate(teams.map((t) => t.id), nextDate, dayIndex) : []
   const auctionReady = teams.length >= 2 && players.length > 0
+  const isTodayNext = nextDate && isToday(nextDate)
 
   return (
-    <main className="tab-page">
+    <main>
       <div className="page-head">
         <h1>{config.name || 'FantaNatale'}</h1>
         <p>
@@ -25,7 +25,7 @@ export default function HomeScreen({ onNavigate }) {
         </p>
       </div>
 
-      <Card title="Prossima giornata" actions={nextDate && isToday(nextDate) ? <Pill tone="gold">oggi</Pill> : null}>
+      <Card title="Prossima giornata" actions={isTodayNext ? <Pill tone="gold">oggi</Pill> : null}>
         {!nextDate ? (
           <p className="note">Tutte le giornate sono state calcolate: la lega è finita.</p>
         ) : teams.length < 2 ? (
@@ -33,7 +33,7 @@ export default function HomeScreen({ onNavigate }) {
         ) : (
           <>
             <p className="next-date">{formatDate(nextDate)}</p>
-            <div className="match-list">
+            <div>
               {pairs.map(([homeId, awayId], i) => (
                 <div className="match" key={i}>
                   <span className="side">{teams.find((t) => t.id === homeId)?.name ?? '—'}</span>
@@ -47,9 +47,14 @@ export default function HomeScreen({ onNavigate }) {
       </Card>
 
       <div className="quick-actions">
-        {!state.auctionDone && auctionReady && (
+        {auctionReady && !state.auctionDone && (
           <Button variant="primary" size="big" onClick={() => onNavigate('auction')}>
-            {isAuctionComplete(state) ? 'Riprendi l’asta' : 'Fai l’asta'}
+            {isAuctionComplete(state) ? 'Torna all’asta' : 'Fai l’asta'}
+          </Button>
+        )}
+        {state.auctionDone && (
+          <Button size="big" onClick={() => onNavigate('auction')}>
+            Riapri l’asta
           </Button>
         )}
         <Button size="big" onClick={() => onNavigate('lineups')}>
@@ -74,8 +79,8 @@ export default function HomeScreen({ onNavigate }) {
       {!auctionReady && (
         <Card title="Da fare per iniziare">
           <p className="note">
-            {teams.length < 2 ? 'Crea le squadre' : 'Aggiungi i giocatori'} e poi fai l’asta.
-            Tocca l’ingranaggio in alto a destra per le Impostazioni.
+            {teams.length < 2 ? 'Crea le squadre' : 'Aggiungi i giocatori'} e poi fai l'asta.
+            Tocca l'ingranaggio in alto a destra per le Impostazioni.
           </p>
           <div className="btn-row">
             <Button onClick={() => onNavigate('setup')}>Apri Impostazioni</Button>

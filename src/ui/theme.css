@@ -291,3 +291,21 @@ html[data-theme='dark'] { color-scheme: dark; }
 [data-theme='dark'] .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 [data-theme='dark'] .pos-badge.first { color: #241c05; }
 [data-theme='dark'] .today-tag { color: #241c05; }
+
+/* ---- finestre di dialogo in-app ---- */
+.dialog-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(10, 16, 12, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.dialog {
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 16px;
+  padding: 1.2rem; max-width: 26rem; width: 100%;
+  box-shadow: 0 10px 40px rgba(10, 16, 12, 0.25);
+}
+.dialog h2 { margin: 0 0 0.4rem; font-size: 1.15rem; }
+.dialog p { margin: 0 0 0.4rem; font-size: 1.05rem; line-height: 1.5; }
+.dialog .btn-row { justify-content: flex-end; }
+.dialog .btn { flex: 1; }

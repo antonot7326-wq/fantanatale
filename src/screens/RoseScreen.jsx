@@ -1,45 +1,124 @@
 import React, { useState } from 'react'
 import { useApp, newId } from '../state/store'
 import { creditsLeft, playersOfTeam } from '../state/selectors'
-import { Button, Card, Empty, Pill, TextInput } from '../ui/parts'
+import { Button, Card, Empty, Pill, TextInput, Stepper, StepperField } from '../ui/parts'
+import { useDialog } from '../ui/dialog'
 
 export default function RoseScreen() {
   const { state, update } = useApp()
+  const dialog = useDialog()
   const { teams, players } = state
 
-  const add = (name) => update((s) => {
+  const add = async (name) => {
     const clean = name.trim()
-    if (!clean) return s
-    if (s.players.some((p) => p.name.toLowerCase() === clean.toLowerCase())) {
-      alert('Questo nome esiste già.')
-      return s
+    if (!clean) return
+    if (players.some((p) => p.name.trim().toLowerCase() === clean.toLowerCase())) {
+      dialog.alert('Questo nome esiste già.')
+      return
     }
-    return { ...s, players: [...s.players, { id: newId(), name: clean, teamId: null }] }
-  })
+    update((s) => ({ ...s, players: [...s.players, { id: newId(), name: clean, teamId: null, strength: 5 }] }))
+  }
 
-  const rename = (id, name) => update((s) => ({ ...s, players: s.players.map((p) => (p.id === id ? { ...p, name } : p)) }))
-
-  const remove = (id) => update((s) => {
-    const player = s.players.find((p) => p.id === id)
-    if (player?.teamId) {
-      const team = s.teams.find((t) => t.id === player.teamId)
-      if (team) team.spent = Math.max(0, team.spent - (player.price ?? 0))
+  const rename = (id, value) => {
+    const clean = value.trim()
+    if (!clean) {
+      dialog.alert('Il nome del giocatore non può restare vuoto.')
+      return
     }
-    return { ...s, players: s.players.filter((p) => p.id !== id) }
-  })
+    if (players.some((p) => p.id !== id && p.name.trim().toLowerCase() === clean.toLowerCase())) {
+      dialog.alert('Esiste già un giocatore con questo nome.')
+      return
+    }
+    update((s) => ({ ...s, players: s.players.map((p) => (p.id === id ? { ...p, name: clean } : p)) }))
+  }
 
-  const release = (id) => update((s) => {
-    const player = s.players.find((p) => p.id === id)
-    if (!player?.teamId) return s
-    const team = s.teams.find((t) => t.id === player.teamId)
-    if (team) team.spent = Math.max(0, team.spent - (player.price ?? 0))
-    return { ...s, players: s.players.map((p) => (p.id === id ? { ...p, teamId: null, price: undefined } : p)) }
-  })
+  const setStrength = (id, value) => update((s) => ({
+    ...s,
+    players: s.players.map((p) => (p.id === id ? { ...p, strength: Math.min(10, Math.max(1, Math.round(Number(value)) || 5)) } : p)),
+  }))
+
+  // Elimina un giocatore pulendo ogni riferimento (B6)
+  const remove = async (id) => {
+    const player = state.players.find((p) => p.id === id)
+    if (!player) return
+    const inTeam = Boolean(player.teamId)
+    const ok = await dialog.confirm(
+      inTeam
+        ? `Eliminare ${player.name}? I crediti spesi tornano alla squadra e sparisce da formazioni e giornate.`
+        : `Eliminare ${player.name}?`,
+      { danger: true, confirmLabel: 'Elimina' },
+    )
+    if (!ok) return
+    update((s) => {
+      const p = s.players.find((x) => x.id === id)
+      let teams = s.teams
+      if (p?.teamId) {
+        teams = s.teams.map((t) => (t.id === p.teamId ? { ...t, spent: Math.max(0, t.spent - (p.price ?? 0)) } : t))
+      }
+      const lineups = Object.fromEntries(
+        Object.entries(s.lineups).map(([day, per]) => [
+          day,
+          Object.fromEntries(
+            Object.entries(per).map(([tid, ids]) => [tid, (ids ?? []).filter((pid) => pid !== id)]),
+          ),
+        ]),
+      )
+      const assignments = Object.fromEntries(
+        Object.entries(s.assignments).map(([day, per]) => {
+          const next = { ...per }
+          delete next[id]
+          return [day, next]
+        }),
+      )
+      return {
+        ...s,
+        teams,
+        players: s.players.filter((x) => x.id !== id),
+        lineups,
+        assignments,
+        auctionLot: s.auctionLot?.playerId === id ? null : s.auctionLot,
+      }
+    })
+  }
+
+  const release = async (id) => {
+    const player = state.players.find((p) => p.id === id)
+    if (!player?.teamId) return
+    const ok = await dialog.confirm(`Mettere ${player.name} di nuovo libero? I crediti tornano alla squadra.`, {
+      confirmLabel: 'Libera',
+    })
+    if (!ok) return
+    update((s) => {
+      const lineups = Object.fromEntries(
+        Object.entries(s.lineups).map(([day, per]) => [
+          day,
+          Object.fromEntries(
+            Object.entries(per).map(([tid, ids]) => [tid, (ids ?? []).filter((pid) => pid !== id)]),
+          ),
+        ]),
+      )
+      const assignments = Object.fromEntries(
+        Object.entries(s.assignments).map(([day, per]) => {
+          const next = { ...per }
+          delete next[id]
+          return [day, next]
+        }),
+      )
+      return {
+        ...s,
+        teams: s.teams.map((t) => (t.id === player.teamId ? { ...t, spent: Math.max(0, t.spent - (player.price ?? 0)) } : t)),
+        players: s.players.map((p) => (p.id === id ? { ...p, teamId: null, price: undefined } : p)),
+        lineups,
+        assignments,
+        auctionLot: s.auctionLot?.playerId === id ? null : s.auctionLot,
+      }
+    })
+  }
 
   const free = players.filter((p) => !p.teamId)
 
   return (
-    <main className="tab-page">
+    <main>
       <div className="page-head">
         <h1>Rose</h1>
         <p>Chi è libero va all’asta; chi ha una squadra è già ingaggiato</p>
@@ -54,11 +133,9 @@ export default function RoseScreen() {
           <div className="rows">
             {free.map((p) => (
               <div className="row" key={p.id}>
-                <TextInput className="grow" value={p.name} onChange={(e) => rename(p.id, e.target.value)} />
+                <TextInput className="grow" value={p.name} onChange={(value) => rename(p.id, value)} aria-label="Nome giocatore" />
                 <Pill tone="muted">libero</Pill>
-                <Button variant="danger" onClick={() => {
-                  if (confirm(`Eliminare ${p.name}?`)) remove(p.id)
-                }}>Elimina</Button>
+                <Button variant="danger" onClick={() => remove(p.id)}>Elimina</Button>
               </div>
             ))}
           </div>
@@ -83,11 +160,18 @@ export default function RoseScreen() {
               <div className="rows">
                 {roster.map((p) => (
                   <div className="row" key={p.id}>
-                    <TextInput className="grow" value={p.name} onChange={(e) => rename(p.id, e.target.value)} />
+                    <TextInput className="grow" value={p.name} onChange={(value) => rename(p.id, value)} aria-label="Nome giocatore" />
                     {p.price != null && <Pill tone="good">{p.price} cr</Pill>}
-                    <Button variant="ghost" onClick={() => {
-                      if (confirm(`Mettere ${p.name} di nuovo libero? I crediti tornano alla squadra.`)) release(p.id)
-                    }}>Libera</Button>
+                    <StepperField label="Forza">
+                      <Stepper
+                        label={`forza di ${p.name}`}
+                        value={p.strength ?? 5}
+                        min={1}
+                        max={10}
+                        onChange={(value) => setStrength(p.id, value)}
+                      />
+                    </StepperField>
+                    <Button variant="ghost" onClick={() => release(p.id)}>Libera</Button>
                     <Button variant="danger" onClick={() => remove(p.id)}>Elimina</Button>
                   </div>
                 ))}
@@ -96,6 +180,11 @@ export default function RoseScreen() {
           </Card>
         )
       })}
+
+      <p className="note">
+        La forza (da 1 a 10) sposta i punti base: un giocatore forte prende in media più punti,
+        e quindi all'asta vale di più. Tutti partono da forza 5.
+      </p>
     </main>
   )
 }

@@ -1,11 +1,15 @@
 import React, { useState } from 'react'
 import { Button, Card, Pill } from '../ui/parts'
+import { useDialog } from '../ui/dialog'
 import { formatDate } from '../lib/schedule'
 import AssignPanel from './AssignPanel'
 
-export default function DayCard({ dateKey, today, index, teams, pairs, result, onCompute, onRemove }) {
+export default function DayCard({ dateKey, today, teams, pairs, result, onCompute, onRemove }) {
   const [open, setOpen] = useState(false)
+  const dialog = useDialog()
   const teamById = (id) => teams.find((t) => t.id === id)
+  // Gli accoppiamenti salvati al calcolo restano la storia vera (B10)
+  const dayPairs = result?.pairs?.length ? result.pairs : pairs
 
   return (
     <Card
@@ -18,7 +22,7 @@ export default function DayCard({ dateKey, today, index, teams, pairs, result, o
       actions={result ? <Pill tone="good">calcolata</Pill> : <Pill tone="muted">da giocare</Pill>}
     >
       <div>
-        {pairs.map(([homeId, awayId], i) => {
+        {dayPairs.map(([homeId, awayId], i) => {
           const home = teamById(homeId)
           const away = awayId ? teamById(awayId) : null
           if (!home && !away) return null
@@ -38,7 +42,7 @@ export default function DayCard({ dateKey, today, index, teams, pairs, result, o
         })}
       </div>
 
-      {!result && <AssignPanel dateKey={dateKey} />}
+      <AssignPanel dateKey={dateKey} />
 
       <div className="btn-row">
         {result ? (
@@ -46,8 +50,12 @@ export default function DayCard({ dateKey, today, index, teams, pairs, result, o
             <Button variant="ghost" onClick={() => setOpen(!open)}>
               {open ? 'Nascondi punteggi' : 'Mostra punteggi'}
             </Button>
-            <Button variant="danger" onClick={() => {
-              if (confirm(`Annullare la giornata del ${formatDate(dateKey)}? I punti tornano a zero.`)) onRemove()
+            <Button variant="danger" onClick={async () => {
+              const ok = await dialog.confirm(`Annullare la giornata del ${formatDate(dateKey)}? I punti tornano a zero, i bonus assegnati restano.`, {
+                danger: true,
+                confirmLabel: 'Annulla giornata',
+              })
+              if (ok) onRemove()
             }}>
               Annulla giornata
             </Button>

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { Component, useEffect, useRef, useState } from 'react'
 import { StateProvider, useApp } from './state/store'
+import { DialogProvider } from './ui/dialog'
 import HomeScreen from './screens/HomeScreen'
 import RoseScreen from './screens/RoseScreen'
 import AuctionScreen from './screens/AuctionScreen'
@@ -13,8 +14,12 @@ import { IconHome, IconTeams, IconAuction, IconCalendar, IconTrophy, IconGear, I
 const THEME_KEY = 'fantanatale-theme'
 
 function preferredTheme() {
-  const saved = localStorage.getItem(THEME_KEY)
-  if (saved === 'dark' || saved === 'light') return saved
+  try {
+    const saved = localStorage.getItem(THEME_KEY)
+    if (saved === 'dark' || saved === 'light') return saved
+  } catch {
+    /* navigazione privata o storage bloccato */
+  }
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
@@ -37,23 +42,99 @@ const VIEWS = {
   lineups: LineupsScreen,
 }
 
+// Dove porta "Indietro" da ogni pagina secondaria (B12).
+const BACK = { setup: 'home', rules: 'setup', lineups: 'home' }
+
+const viewFromHash = () => {
+  const id = window.location.hash.replace(/^#\/?/, '')
+  return VIEWS[id] ? id : 'home'
+}
+
+// Se qualcosa va storto, l'app non sparisce: messaggio chiaro e pulsante Ricarica (A1).
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="app">
+          <div className="content">
+            <div className="card" style={{ marginTop: '2rem' }}>
+              <h2 style={{ marginTop: 0 }}>Qualcosa non ha funzionato</h2>
+              <p className="note">
+                I dati della lega sono al sicuro in questo telefono. Ricarica la pagina per continuare a giocare.
+              </p>
+              <div className="btn-row">
+                <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>
+                  Ricarica
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 function Shell() {
   const { state } = useApp()
-  const [view, setView] = useState('home')
+  const [view, setView] = useState(viewFromHash)
   const [theme, setTheme] = useState(preferredTheme)
+  const hasController = useRef(Boolean(navigator.serviceWorker?.controller))
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#131a15' : '#12a05f')
   }, [theme])
+
+  useEffect(() => {
+    const onHash = () => {
+      setView(viewFromHash())
+      window.scrollTo(0, 0)
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  useEffect(() => {
+    if (!navigator.serviceWorker) return
+    const onController = () => {
+      if (!hasController.current) {
+        hasController.current = true
+        return
+      }
+      window.location.reload()
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', onController)
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', onController)
+  }, [])
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark'
-    localStorage.setItem(THEME_KEY, next)
+    try {
+      localStorage.setItem(THEME_KEY, next)
+    } catch {
+      /* navigazione privata: il tema resta solo per la sessione */
+    }
     setTheme(next)
   }
-  const View = VIEWS[view] ?? HomeScreen
-  const onNavigate = (id) => setView(VIEWS[id] ? id : 'home')
+
+  const navigate = (id) => {
+    window.location.hash = VIEWS[id] ? `#/${id}` : '#/home'
+  }
+
   const secondary = view === 'setup' || view === 'rules' || view === 'lineups'
+  const View = VIEWS[view] ?? HomeScreen
+  const netOn = state.net.enabled
 
   return (
     <div className="app">
@@ -78,7 +159,7 @@ function Shell() {
         <button
           type="button"
           className={`icon-btn ${view === 'setup' ? 'active' : ''}`}
-          onClick={() => setView('setup')}
+          onClick={() => navigate('setup')}
           aria-label="Impostazioni"
         >
           <IconGear />
@@ -86,11 +167,13 @@ function Shell() {
       </header>
 
       <div className="content">
-        <View onNavigate={onNavigate} onBack={() => setView('home')} />
+        <View onNavigate={navigate} onBack={() => navigate(BACK[view] ?? 'home')} />
       </div>
 
       <footer className="footer">
-        I dati restano in questo telefono. Usa «Esporta» nelle Impostazioni per spostarli.
+        {netOn
+          ? 'I dati sono collegati tra i telefoni della lega.'
+          : 'I dati restano in questo telefono. Usa «Esporta» nelle Impostazioni per spostarli.'}
       </footer>
 
       <nav className="tabbar" aria-label="Navigazione principale">
@@ -100,7 +183,7 @@ function Shell() {
             type="button"
             className={`tab ${view === id || (secondary && id === 'home') ? 'active' : ''}`}
             aria-current={view === id ? 'page' : undefined}
-            onClick={() => setView(id)}
+            onClick={() => navigate(id)}
           >
             <Icon />
             <span>{label}</span>
@@ -113,8 +196,12 @@ function Shell() {
 
 export default function App() {
   return (
-    <StateProvider>
-      <Shell />
-    </StateProvider>
+    <ErrorBoundary>
+      <StateProvider>
+        <DialogProvider>
+          <Shell />
+        </DialogProvider>
+      </StateProvider>
+    </ErrorBoundary>
   )
 }
