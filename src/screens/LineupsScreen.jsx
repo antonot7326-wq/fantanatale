@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { useApp } from '../state/store'
 import { playersOfTeam } from '../state/selectors'
 import { lineupFor } from '../lib/data'
-import { Button, Card, Empty, Pill, PageTitle, SteppedList } from '../ui/parts'
+import { Button, Card, Empty, Pill, PageTitle } from '../ui/parts'
 import { dateRange, formatDate, isToday } from '../lib/schedule'
 
 export default function LineupsScreen({ onNavigate, onBack }) {
@@ -88,8 +88,6 @@ export default function LineupsScreen({ onNavigate, onBack }) {
       <div className="btn-row">
         <Button variant="primary" onClick={() => onNavigate('matchdays')}>Vai alle giornate</Button>
       </div>
-
-      <SteppedList current="lineups" onGo={onNavigate} />
     </main>
   )
 }

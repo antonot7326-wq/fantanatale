@@ -22,15 +22,16 @@ Ogni parte è un file piccolo e separato, così è facile capire e modificare un
 | File | Contenuto |
 |---|---|
 | `src/ui/parts.jsx` | Bottoni, schede, campi, stepper +/−, tabelle, titolo con «‹ Menu» |
+| `src/ui/icons.jsx` | Icone SVG della barra di navigazione (niente emoji) |
 | `src/ui/theme.css` | Colori e dimensioni: font grandi, contrasto alto |
 
 ## Schermate (una per file, nessuna fa tutto)
 | File | Contenuto |
 |---|---|
-| `src/screens/MenuScreen.jsx` | Menu principale: 7 piastrelle grandi con stato |
+| `src/screens/HomeScreen.jsx` | Home: prossima giornata, azioni rapide, stato della lega |
 | `src/screens/SetupScreen.jsx` | Impostazioni della lega + salvataggio (esporta/importa/azzeramento) |
 | `src/screens/TeamsEditor.jsx` | Solo la lista delle squadre |
-| `src/screens/PlayersScreen.jsx` | Solo la lista dei giocatori (familiari) |
+| `src/screens/RoseScreen.jsx` | Tab Rose: giocatori liberi + rosa di ogni squadra |
 | `src/screens/RulesScreen.jsx` | Bonus e malus: inserimento e elenco |
 | `src/screens/EventRow.jsx` | Una singola regola bonus/malus |
 | `src/screens/AuctionScreen.jsx` | Asta: crediti, giocatori liberi, chiusura |

@@ -1,6 +1,6 @@
 import React from 'react'
 import { useApp, newId } from '../state/store'
-import { Button, Card, TextInput, Pill, Empty, PageTitle, SteppedList, Stepper } from '../ui/parts'
+import { Button, Card, TextInput, Empty, PageTitle, Stepper } from '../ui/parts'
 import EventRow from './EventRow'
 
 export function useEvents() {
@@ -15,7 +15,7 @@ export function useEvents() {
   }
 }
 
-export default function RulesScreen({ onNavigate, onBack }) {
+export default function RulesScreen({ onBack }) {
   const { events } = useEvents()
 
   return (
@@ -25,6 +25,8 @@ export default function RulesScreen({ onNavigate, onBack }) {
         subtitle="Regole dei punti extra: ognuna la definisci tu"
         onBack={onBack}
       />
+
+      <p className="note">La simulazione funziona anche senza regole: aggiungerle è facoltativo.</p>
 
       <NewEventCard />
 
@@ -45,8 +47,6 @@ export default function RulesScreen({ onNavigate, onBack }) {
           i punti (numeri negativi per i malus) si sommano ai punti base.
         </p>
       </Card>
-
-      <SteppedList current="rules" onGo={onNavigate} />
     </main>
   )
 }

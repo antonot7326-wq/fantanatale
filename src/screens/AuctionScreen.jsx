@@ -1,9 +1,9 @@
 import { useApp } from '../state/store'
 import { creditsLeft, playersOfTeam, isAuctionComplete } from '../state/selectors'
-import { Button, Card, Empty, PageTitle, SteppedList } from '../ui/parts'
+import { Button, Card, Empty, PageTitle } from '../ui/parts'
 import AuctionLot from './AuctionLot'
 
-export default function AuctionScreen({ onNavigate, onBack }) {
+export default function AuctionScreen({ onNavigate }) {
   const { state, update } = useApp()
   const { teams, players, config } = state
 
@@ -31,7 +31,7 @@ export default function AuctionScreen({ onNavigate, onBack }) {
   if (teams.length < 2 || players.length === 0) {
     return (
       <main>
-        <PageTitle title="Asta" onBack={onBack} />
+        <PageTitle title="Asta" />
         <Card>
           <Empty>Prima servono le squadre (in Impostazioni) e i giocatori.</Empty>
         </Card>
@@ -53,7 +53,7 @@ export default function AuctionScreen({ onNavigate, onBack }) {
 
   return (
     <main>
-      <PageTitle title="Asta" subtitle="Acquistate i giocatori, uno alla volta" onBack={onBack} />
+      <PageTitle title="Asta" subtitle="Acquistate i giocatori, uno alla volta" />
 
       <Card title="Crediti e rose">
         <div className="team-credits">
@@ -101,8 +101,6 @@ export default function AuctionScreen({ onNavigate, onBack }) {
           {complete ? 'Passa alle formazioni' : 'Termina l\u2019asta e vai alle formazioni'}
         </Button>
       </div>
-
-      <SteppedList current="auction" onGo={onNavigate} />
     </main>
   )
 }

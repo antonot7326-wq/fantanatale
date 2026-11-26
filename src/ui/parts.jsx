@@ -1,4 +1,5 @@
 import React from 'react'
+import { IconBack } from './icons'
 
 export function Button({ variant = 'default', size = 'regular', className = '', ...rest }) {
   const cls = ['btn', `btn-${variant}`, size === 'big' ? 'btn-big' : '', className].filter(Boolean).join(' ')
@@ -87,38 +88,14 @@ export function Stepper({ value, onChange, min = 0, max = 999, step = 1, label }
 
 export function PageTitle({ title, subtitle, onBack }) {
   return (
-    <div className="page-title">
+    <div className="page-head">
+      <h1>{title}</h1>
+      {subtitle && <p>{subtitle}</p>}
       {onBack && (
-        <Button onClick={onBack} className="back">
-          ‹ Menu
-        </Button>
+        <button type="button" className="page-back" onClick={onBack}>
+          <IconBack /> Indietro
+        </button>
       )}
-      <div>
-        <h1>{title}</h1>
-        {subtitle && <p>{subtitle}</p>}
-      </div>
-    </div>
-  )
-}
-
-export function SteppedList({ current, onGo }) {
-  const steps = [
-    ['setup', 'Impostazioni della lega'],
-    ['players', 'Inserisci i giocatori'],
-    ['rules', 'Definisci bonus e malus'],
-    ['auction', 'Fai l\u2019asta'],
-    ['lineups', 'Scegli le formazioni'],
-    ['matchdays', 'Poi: calcola le giornate'],
-  ]
-  const idx = steps.findIndex(([id]) => id === current)
-  if (idx < 0 || idx >= steps.length - 1) return null
-  const next = steps[idx + 1]
-  return (
-    <div className="next-step">
-      <span>Prossimo passo:</span>
-      <Button variant="primary" onClick={() => onGo(next[0])}>
-        {next[1]}
-      </Button>
     </div>
   )
 }

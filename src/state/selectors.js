@@ -19,12 +19,3 @@ export function isAuctionComplete(state) {
   return teams.every((t) => playersOfTeam(state, t.id).length >= config.formationSize)
 }
 
-export const SCREENS = [
-  { id: 'setup', label: 'Impostazioni', hint: 'Lega, host, budget, squadre' },
-  { id: 'players', label: 'Giocatori', hint: 'Inserisci i familiari' },
-  { id: 'rules', label: 'Bonus e Malus', hint: 'Regole dei punti' },
-  { id: 'auction', label: 'Asta', hint: 'Acquista i giocatori' },
-  { id: 'lineups', label: 'Formazioni', hint: 'Scegli gli schierati' },
-  { id: 'matchdays', label: 'Giornate', hint: 'Calcola i risultati delle giornate' },
-  { id: 'standings', label: 'Classifica', hint: 'Punti e risultati' },
-]

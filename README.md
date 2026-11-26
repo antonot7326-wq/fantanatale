@@ -4,17 +4,16 @@ Fantacalcio natalizio di famiglia: i giocatori sono i vostri familiari, senza ru
 con formazioni corte e una giornata per ogni giorno reale delle festività.
 
 Pensata per essere usata da persone anche non giovanissime: testi grandi (base 18px),
-bottoni larghi, menu principale a piastrelle, nessuna istruzione nascosta.
+bottoni larghi, una barra di navigazione in basso sempre visibile come nelle app del telefono.
 La simulazione è solo matematica casuale: nessun account, nessun server, nessun dato inviato.
 
 ## Come funziona
-1. **Impostazioni** — nome della lega, chi calcola le giornate, crediti, numerosità formazioni, date natalizie, squadre.
-2. **Giocatori** — si inseriscono i familiari, scrivendoli a mano.
-3. **Bonus e Malus** — regole extra fai-da-te: nome, punti (negativi = malus), probabilità.
-4. **Asta** — base d'asta 1 credito, rilanci +1/+10, offerta libera, vendita con addebito in crediti.
-5. **Formazioni** — si scelgono gli schierati per ogni giornata; la formazione precedente viene ereditata.
-6. **Giornate** — il calendario genera le sfide (round robin con andata e ritorno, gestisce squadre dispari con riposo). Solo il responsabile preme «Calcola giornata».
-7. **Classifica** — punti totali e risultati di ogni giornata.
+1. **Impostazioni** (ingranaggio in alto) — nome della lega, chi calcola le giornate, crediti, numerosità formazioni, date natalizie, squadre, bonus/malus, esporta e importa.
+2. **Rose** — si aggiungono i familiari e si vedono le squadre con i loro giocatori.
+3. **Asta** — base d'asta 1 credito, rilanci +1/+10, offerta libera, vendita con addebito in crediti.
+4. **Formazioni** — si scelgono gli schierati per ogni giornata; la formazione precedente viene ereditata (si parte dalla Home).
+5. **Giornate** — il calendario genera le sfide (round robin con andata e ritorno, gestisce squadre dispari con riposo). Solo il responsabile preme «Calcola giornata».
+6. **Classifica** — punti totali e risultati di ogni giornata.
 
 ## Avvio rapido (chi ospita la lega)
 ```bash

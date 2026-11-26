@@ -1,5 +1,5 @@
 import { useApp } from '../state/store'
-import { Button, Card, Field, TextInput, DateInput, Stepper, PageTitle, SteppedList } from '../ui/parts'
+import { Button, Card, Field, TextInput, DateInput, Stepper, PageTitle } from '../ui/parts'
 import TeamsEditor from './TeamsEditor'
 
 export default function SetupScreen({ onNavigate, onBack }) {
@@ -16,7 +16,7 @@ export default function SetupScreen({ onNavigate, onBack }) {
 
   return (
     <main>
-      <PageTitle title="Impostazioni della lega" subtitle="Tutto si può modificare in seguito" onBack={onBack} />
+      <PageTitle title="Impostazioni" subtitle="Tutto si può modificare in seguito" onBack={onBack} />
 
       <Card title="Lega">
         <div className="form-grid">
@@ -61,6 +61,13 @@ export default function SetupScreen({ onNavigate, onBack }) {
 
       <TeamsEditor />
 
+      <Card title="Bonus e Malus">
+        <p className="note">Le regole dei punti extra: le definisci tu, una per volta.</p>
+        <div className="btn-row">
+          <Button variant="primary" onClick={() => onNavigate('rules')}>Gestisci bonus e malus</Button>
+        </div>
+      </Card>
+
       <Card title="Salvataggio e spostamento">
         <div className="btn-row">
           <ExportButton />
@@ -79,7 +86,6 @@ export default function SetupScreen({ onNavigate, onBack }) {
         </p>
       </Card>
 
-      <SteppedList current="setup" onGo={onNavigate} />
     </main>
   )
 }

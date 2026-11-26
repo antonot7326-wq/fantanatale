@@ -3,7 +3,7 @@ import { useApp } from '../state/store'
 import { Card, Empty, PageTitle } from '../ui/parts'
 import { dateRange, formatDate } from '../lib/schedule'
 
-export default function StandingsScreen({ onBack }) {
+export default function StandingsScreen() {
   const { state } = useApp()
   const { teams, config } = state
   const dates = dateRange(config.startDate, config.endDate)
@@ -12,7 +12,7 @@ export default function StandingsScreen({ onBack }) {
   if (teams.length < 2) {
     return (
       <main>
-        <PageTitle title="Classifica" onBack={onBack} />
+        <PageTitle title="Classifica" />
         <Card><Empty>La classifica compare quando ci sono almeno due squadre.</Empty></Card>
       </main>
     )
@@ -28,7 +28,7 @@ export default function StandingsScreen({ onBack }) {
 
   return (
     <main>
-      <PageTitle title="Classifica" subtitle={`${computed.length} giornate calcolate`} onBack={onBack} />
+      <PageTitle title="Classifica" subtitle={`${computed.length} giornate calcolate`} />
 
       <Card title="Punti totali">
         {computed.length === 0 ? (
@@ -46,7 +46,7 @@ export default function StandingsScreen({ onBack }) {
             <tbody>
               {rows.map((r, i) => (
                 <tr key={r.team.id} className={i === 0 ? 'row-first' : ''}>
-                  <td>{i + 1}</td>
+                  <td><span className={`pos-badge ${i === 0 ? 'first' : ''}`}>{i + 1}</span></td>
                   <td><strong>{r.team.name}</strong></td>
                   <td className="num">{r.played}</td>
                   <td className="num"><strong>{r.points}</strong></td>

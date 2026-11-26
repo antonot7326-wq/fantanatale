@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react'
 import { useApp } from '../state/store'
 import { isAuctionComplete } from '../state/selectors'
-import { Button, Card, Empty, PageTitle, SteppedList } from '../ui/parts'
+import { Button, Card, Empty, PageTitle } from '../ui/parts'
 import { dateRange, formatDate, isToday, scheduleForDate } from '../lib/schedule'
 import { simulateMatchday } from '../lib/sim'
 import DayCard from './DayCard'
 
-export default function MatchdaysScreen({ onNavigate, onBack }) {
+export default function MatchdaysScreen({ onNavigate }) {
   const { state, update } = useApp()
   const { teams, players, config } = state
   const dates = useMemo(() => dateRange(config.startDate, config.endDate), [config.startDate, config.endDate])
@@ -16,7 +16,7 @@ export default function MatchdaysScreen({ onNavigate, onBack }) {
   if (teams.length < 2 || players.length === 0) {
     return (
       <main>
-        <PageTitle title="Giornate" onBack={onBack} />
+        <PageTitle title="Giornate" />
         <Card><Empty>Prima completa impostazioni, giocatori e asta.</Empty></Card>
       </main>
     )
@@ -25,7 +25,7 @@ export default function MatchdaysScreen({ onNavigate, onBack }) {
   if (!selected) {
     return (
       <main>
-        <PageTitle title="Giornate" onBack={onBack} />
+        <PageTitle title="Giornate" />
         <Card><Empty>Imposta prima le date del calendario nelle Impostazioni.</Empty></Card>
       </main>
     )
@@ -61,7 +61,6 @@ export default function MatchdaysScreen({ onNavigate, onBack }) {
       <PageTitle
         title="Giornate"
         subtitle={`Ogni giorno reale è una giornata. Chi calcola: ${config.host || 'da definire nelle Impostazioni'}`}
-        onBack={onBack}
       />
 
       {!isAuctionComplete(state) && (
@@ -90,10 +89,9 @@ export default function MatchdaysScreen({ onNavigate, onBack }) {
       />
 
       <div className="btn-row">
+        <Button variant="ghost" onClick={() => onNavigate('lineups')}>Modifica formazioni</Button>
         <Button variant="primary" onClick={() => onNavigate('standings')}>Vai alla classifica</Button>
       </div>
-
-      <SteppedList current="matchdays" onGo={onNavigate} />
     </main>
   )
 }
