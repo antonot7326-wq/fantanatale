@@ -78,6 +78,23 @@ export function IconGear() {
   )
 }
 
+export function IconSun() {
+  return (
+    <Icon size={22}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2l1.8 1.8M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8" />
+    </Icon>
+  )
+}
+
+export function IconMoon() {
+  return (
+    <Icon size={22}>
+      <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />
+    </Icon>
+  )
+}
+
 export function IconBack() {
   return (
     <Icon size={20}>

@@ -11,7 +11,6 @@ export default function EventRow({ event }) {
         {positive ? '+' : ''}
         {event.points} punti
       </Pill>
-      <Pill tone="muted">probabilità {event.chance}%</Pill>
       <Button variant="danger" onClick={() => removeEvent(event.id)}>Elimina</Button>
     </div>
   )

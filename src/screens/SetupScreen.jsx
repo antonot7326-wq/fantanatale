@@ -1,9 +1,13 @@
+import React, { useState } from 'react'
 import { useApp } from '../state/store'
-import { Button, Card, Field, TextInput, DateInput, Stepper, PageTitle } from '../ui/parts'
+import { Button, Card, Field, TextInput, DateInput, Stepper, PageTitle, Pill, Empty } from '../ui/parts'
 import TeamsEditor from './TeamsEditor'
+import { pullState, pushState, syncConfigured } from '../lib/sync'
 
 export default function SetupScreen({ onNavigate, onBack }) {
-  const { state, update, resetAll } = useApp()
+  const { state, update, resetAll, replaceState } = useApp()
+  const net = state.net
+  const [netStatus, setNetStatus] = useState(null)
   const cfg = state.config
 
   const setField = (key) => (e) => update((s) => ({ ...s, config: { ...s.config, [key]: e.target.value } }))
@@ -68,7 +72,9 @@ export default function SetupScreen({ onNavigate, onBack }) {
         </div>
       </Card>
 
-      <Card title="Salvataggio e spostamento">
+      <NetworkCard net={net} netStatus={netStatus} setNetStatus={setNetStatus} />
+
+      <Card title="Copia di sicurezza">
         <div className="btn-row">
           <ExportButton />
           <ImportButton />
@@ -82,11 +88,80 @@ export default function SetupScreen({ onNavigate, onBack }) {
           </Button>
         </div>
         <p className="note">
-          La lega vive in questo telefono. Per portarla altrove: esporta il file, poi aprilo sul altro dispositivo e importa.
+          La lega vive anche in questo telefono: la copia serve come riserva o per portarla su un telefono nuovo.
         </p>
       </Card>
-
     </main>
+  )
+}
+
+function NetworkCard({ net, netStatus, setNetStatus }) {
+  const { update, state } = useApp()
+
+  const setUrl = (value) => update((s) => ({ ...s, net: { ...s.net, url: value, enabled: false } }))
+  const setRoom = (value) => update((s) => ({ ...s, net: { ...s.net, room: value.trim(), enabled: false } }))
+
+  const activate = async () => {
+    if (!syncConfigured(net)) {
+      alert('Scrivi l’indirizzo del database e il nome della stanza.')
+      return
+    }
+    setNetStatus('connessione…')
+    try {
+      const remote = await pullState(net)
+      if (remote && (remote.players?.length || remote.teams?.length)) {
+        if (confirm('La stanza esiste già e contiene una lega. La carico su questo telefono? (Annulla per non cambiare niente)')) {
+          replaceState(remote)
+        }
+      } else {
+        await pushState(net, { ...state, net: { ...net, enabled: true }, rev: Date.now() })
+      }
+      update((s) => ({ ...s, net: { ...s.net, enabled: true } }))
+      setNetStatus('ok: i telefoni sono collegati')
+    } catch (e) {
+      setNetStatus(null)
+      alert('Connessione non riuscita: controlla l’indirizzo del database. (' + e.message + ')')
+    }
+  }
+
+  const deactivate = () => {
+    update((s) => ({ ...s, net: { ...s.net, enabled: false } }))
+    setNetStatus(null)
+  }
+
+  return (
+    <Card title="Gioco tra i telefoni" actions={net.enabled ? <Pill tone="good">collegati</Pill> : null}>
+      {net.enabled ? (
+        <>
+          <p className="note">
+            Tutti i telefoni con lo stesso indirizzo e la stessa stanza vedono la stessa lega,
+            aggiornata da sola ogni pochi secondi. Nessun file da spostare.
+          </p>
+          <div className="btn-row">
+            <Button variant="danger" onClick={deactivate}>Scollega questo telefono</Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <Empty>Per giocare tutti sulla stessa lega: crea il database gratuito (vedi la guida sotto), poi compila qui.</Empty>
+          <div className="form-grid">
+            <Field label="Indirizzo del database" help="Da Firebase: l’URL che finisce con -rtdb.firebaseio.com">
+              <TextInput value={net.url} onChange={setUrl} placeholder="https://fantanatale-xxxxx-default-rtdb.firebaseio.com" />
+            </Field>
+            <Field label="Nome della stanza" help="Una parola, uguale su tutti i telefoni">
+              <TextInput value={net.room} onChange={setRoom} placeholder="famiglia-2025" />
+            </Field>
+          </div>
+          <div className="btn-row">
+            <Button variant="primary" onClick={activate}>Collega questo telefono</Button>
+          </div>
+          <p className="note">
+            {netStatus ? `Stato: ${netStatus}. ` : ''}Guida: console.firebase.google.com → nuovo progetto →
+            Realtime Database → crea → copia l’URL qui sopra. Nei permessi imposta leggi e scrivi = true durante le feste.
+          </p>
+        </>
+      )}
+    </Card>
   )
 }
 

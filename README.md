@@ -4,16 +4,28 @@ Fantacalcio natalizio di famiglia: i giocatori sono i vostri familiari, senza ru
 con formazioni corte e una giornata per ogni giorno reale delle festività.
 
 Pensata per essere usata da persone anche non giovanissime: testi grandi (base 18px),
-bottoni larghi, una barra di navigazione in basso sempre visibile come nelle app del telefono.
-La simulazione è solo matematica casuale: nessun account, nessun server, nessun dato inviato.
+bottoni larghi, una barra di navigazione in basso sempre visibile come nelle app del telefono,
+tema chiaro e scuro selezionabile in alto.
+I punti base sono casuali; bonus e malus li assegna l'host. Nessun LLM; nessun dato inviato se non attivi la sincronizzazione.
 
 ## Come funziona
 1. **Impostazioni** (ingranaggio in alto) — nome della lega, chi calcola le giornate, crediti, numerosità formazioni, date natalizie, squadre, bonus/malus, esporta e importa.
 2. **Rose** — si aggiungono i familiari e si vedono le squadre con i loro giocatori.
 3. **Asta** — base d'asta 1 credito, rilanci +1/+10, offerta libera, vendita con addebito in crediti.
 4. **Formazioni** — si scelgono gli schierati per ogni giornata; la formazione precedente viene ereditata (si parte dalla Home).
-5. **Giornate** — il calendario genera le sfide (round robin con andata e ritorno, gestisce squadre dispari con riposo). Solo il responsabile preme «Calcola giornata».
-6. **Classifica** — punti totali e risultati di ogni giornata.
+5. **Bonus e malus** — le regole le crei tu; a ogni giornata è l'host a decidere chi le prende, con un tocco. Niente di casuale.
+6. **Giornate** — il calendario genera le sfide (round robin con andata e ritorno, gestisce squadre dispari con riposo). I punti base restano casuali: sono la "partita".
+7. **Classifica** — punti totali e risultati di ogni giornata.
+
+## Giocare da più telefoni (senza file)
+L'app può sincronizzarsi da sola con Firebase Realtime Database (piano gratuito):
+1. Crea un progetto su console.firebase.google.com
+2. Nel menu «Realtime Database» crea il database (modalità test)
+3. Copia l'URL che finisce per -rtdb.firebaseio.com
+4. In FantaNatale: Impostazioni → «Gioco tra i telefoni» → incolla l'URL, scegli un nome di stanza, «Collega questo telefono»
+5. Ripeti il punto 4 sugli altri telefoni: stessa URL, stesso nome di stanza
+
+Da quel momento ogni modifica (asta, formazioni, giornate) arriva su tutti i telefoni in pochi secondi.
 
 ## Avvio rapido (chi ospita la lega)
 ```bash

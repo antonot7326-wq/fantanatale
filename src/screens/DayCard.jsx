@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Button, Card, Pill } from '../ui/parts'
 import { formatDate } from '../lib/schedule'
+import AssignPanel from './AssignPanel'
 
 export default function DayCard({ dateKey, today, index, teams, pairs, result, onCompute, onRemove }) {
   const [open, setOpen] = useState(false)
@@ -36,6 +37,8 @@ export default function DayCard({ dateKey, today, index, teams, pairs, result, o
           )
         })}
       </div>
+
+      {!result && <AssignPanel dateKey={dateKey} />}
 
       <div className="btn-row">
         {result ? (

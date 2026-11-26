@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { StateProvider, useApp } from './state/store'
 import HomeScreen from './screens/HomeScreen'
 import RoseScreen from './screens/RoseScreen'
@@ -8,7 +8,15 @@ import MatchdaysScreen from './screens/MatchdaysScreen'
 import StandingsScreen from './screens/StandingsScreen'
 import SetupScreen from './screens/SetupScreen'
 import RulesScreen from './screens/RulesScreen'
-import { IconHome, IconTeams, IconAuction, IconCalendar, IconTrophy, IconGear } from './ui/icons'
+import { IconHome, IconTeams, IconAuction, IconCalendar, IconTrophy, IconGear, IconSun, IconMoon } from './ui/icons'
+
+const THEME_KEY = 'fantanatale-theme'
+
+function preferredTheme() {
+  const saved = localStorage.getItem(THEME_KEY)
+  if (saved === 'dark' || saved === 'light') return saved
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
 
 const TABS = [
   { id: 'home', label: 'Home', Icon: IconHome },
@@ -32,6 +40,17 @@ const VIEWS = {
 function Shell() {
   const { state } = useApp()
   const [view, setView] = useState('home')
+  const [theme, setTheme] = useState(preferredTheme)
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+  }, [theme])
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    localStorage.setItem(THEME_KEY, next)
+    setTheme(next)
+  }
   const View = VIEWS[view] ?? HomeScreen
   const onNavigate = (id) => setView(VIEWS[id] ? id : 'home')
   const secondary = view === 'setup' || view === 'rules' || view === 'lineups'
@@ -47,6 +66,15 @@ function Shell() {
         <div className="topbar-title">
           <h1>{state.config.name || 'FantaNatale'}</h1>
         </div>
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
+          title="Tema chiaro / scuro"
+        >
+          {theme === 'dark' ? <IconSun /> : <IconMoon />}
+        </button>
         <button
           type="button"
           className={`icon-btn ${view === 'setup' ? 'active' : ''}`}

@@ -43,14 +43,16 @@ export default function MatchdaysScreen({ onNavigate }) {
     if (incomplete.length && !confirm(`Attenzione: queste squadre non hanno la formazione completa: ${incomplete.map((t) => t.name).join(', ')}. Calcolare comunque?`)) {
       return s
     }
-    const result = simulateMatchday({ config: s.config, teams: s.teams, players: s.players, events: s.events, dateKey: selected, lineups })
+    const result = simulateMatchday({ config: s.config, teams: s.teams, players: s.players, dateKey: selected, lineups, assignments: s.assignments?.[selected] ?? {} })
     return { ...s, results: { ...s.results, [selected]: result } }
   })
 
   const removeResult = () => update((s) => {
     const rest = { ...s.results }
     delete rest[selected]
-    return { ...s, results: rest }
+    const assignments = { ...s.assignments }
+    delete assignments[selected]
+    return { ...s, results: rest, assignments }
   })
 
   const result = state.results[selected]

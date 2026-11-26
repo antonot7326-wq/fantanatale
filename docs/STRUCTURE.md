@@ -16,6 +16,7 @@ Ogni parte è un file piccolo e separato, così è facile capire e modificare un
 | `src/state/selectors.js` | Domande già pronte: crediti rimasti, rose, se l'asta è completa |
 | `src/lib/schedule.js` | Calendario: giorni reali e accoppiamenti round robin |
 | `src/lib/sim.js` | Motore della simulazione: punti base casuali + eventi bonus/malus |
+| `src/lib/sync.js` | Sincronizzazione Firebase REST (pull/push, zero dipendenze) |
 | `src/lib/data.js` | Lettura della formazione di una giornata (con eredità dalla precedente) |
 
 ## Componenti di interfaccia (riusabili)
@@ -38,6 +39,7 @@ Ogni parte è un file piccolo e separato, così è facile capire e modificare un
 | `src/screens/AuctionLot.jsx` | Il giocatore in vendita: offerte e vendita |
 | `src/screens/LineupsScreen.jsx` | Formazioni: giornata + squadre |
 | `src/screens/MatchdaysScreen.jsx` | Giornate: scelta del giorno e calcolo |
+| `src/screens/AssignPanel.jsx` | Assegnazione manuale di bonus e malus a ogni giocatore |
 | `src/screens/DayCard.jsx` | Una giornata: accoppiamenti, punteggi, dettaglio |
 | `src/screens/StandingsScreen.jsx` | Classifica a punti |
 | `public/sw.js` | Supporto per usare l'app senza connessione |
