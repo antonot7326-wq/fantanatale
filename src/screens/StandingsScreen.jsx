@@ -1,13 +1,13 @@
 import React from 'react'
 import { useApp } from '../state/store'
+import { standings } from '../state/selectors'
 import { Card, Empty, PageTitle } from '../ui/parts'
-import { dateRange, formatDate } from '../lib/schedule'
+import { formatDate } from '../lib/schedule'
 
 export default function StandingsScreen() {
   const { state } = useApp()
-  const { teams, config } = state
-  const dates = dateRange(config.startDate, config.endDate)
-  const computed = dates.filter((d) => state.results[d])
+  const { teams } = state
+  const { rows, computed } = standings(state)
 
   if (teams.length < 2) {
     return (
@@ -16,21 +16,6 @@ export default function StandingsScreen() {
         <Card><Empty>La classifica compare quando ci sono almeno due squadre.</Empty></Card>
       </main>
     )
-  }
-
-  const rows = teams
-    .map((team) => {
-      const played = computed.filter((d) => state.results[d]?.details?.[team.id])
-      const points = played.reduce((sum, d) => sum + (state.results[d].details[team.id]?.total ?? 0), 0)
-      return { team, played: played.length, points }
-    })
-    .sort((a, b) => b.points - a.points || a.team.name.localeCompare(b.team.name, 'it'))
-
-  // Pari merito: stessa posizione per chi ha gli stessi punti (C2)
-  const positionOf = (index) => {
-    const target = rows[index]
-    const first = rows.findIndex((r) => r.points === target.points)
-    return first + 1
   }
 
   return (
@@ -54,7 +39,7 @@ export default function StandingsScreen() {
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={r.team.id} className={i === 0 ? 'row-first' : ''}>
-                    <td><span className={`pos-badge ${i === 0 ? 'first' : ''}`}>{positionOf(i)}</span></td>
+                    <td><span className={`pos-badge ${i === 0 ? 'first' : ''}`}>{r.position}</span></td>
                     <td><strong>{r.team.name}</strong></td>
                     <td className="num">{r.played}</td>
                     <td className="num"><strong>{r.points}</strong></td>

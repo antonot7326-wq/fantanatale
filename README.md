@@ -34,12 +34,15 @@ L'app può sincronizzarsi da sola con Firebase Realtime Database (piano gratuito
 1. Crea un progetto su console.firebase.google.com
 2. Nel menu «Realtime Database» crea il database (modalità test)
 3. Copia l'URL che finisce per -rtdb.firebaseio.com
-4. In FantaNatale: Impostazioni → «Gioco tra i telefoni» → incolla l'URL, scegli un nome di stanza, «Collega questo telefono»
-5. Ripeti il punto 4 sugli altri telefoni: stessa URL, stesso nome di stanza
+4. In FantaNatale: Impostazioni → «Gioco tra i telefoni» → incolla l'URL, scegli un nome di stanza, poi:
+   - **«Collega come organizzatore»** sul tuo telefono: controllo di tutto (asta, formazioni, giornate, bonus);
+   - **«Collega come ospite»** sui telefoni dei familiari: vedono solo il nome della lega e la classifica,
+     aggiornati da soli ogni pochi secondi. Non possono modificare niente e non scrivono mai sulla stanza.
 
-Da quel momento ogni modifica (asta, formazioni, giornate) arriva su tutti i telefoni in pochi secondi.
+Da quel momento ogni modifica dell'organizzatore arriva su tutti i telefoni in pochi secondi.
 Se un telefono si collega a una stanza che contiene già una lega, l'app chiede cosa fare:
 caricare la lega esistente o non toccare niente — annullare non sovrascrive mai la stanza.
+Dalla schermata ospite si esce con «Esci dalla modalità ospite».
 
 ### Attenzione alla «modalità test» di Firebase
 Le regole di sicurezza della modalità test (`read`/`write` = `true`) **scadono dopo 30 giorni** e

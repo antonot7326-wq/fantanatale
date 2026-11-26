@@ -45,6 +45,7 @@ Ogni parte è un file piccolo e separato, così è facile capire e modificare un
 | `src/screens/AssignPanel.jsx` | Assegnazione manuale di bonus e malus a ogni giocatore, ricalcolo a giornata calcolata |
 | `src/screens/DayCard.jsx` | Una giornata: accoppiamenti, punteggi, dettaglio |
 | `src/screens/StandingsScreen.jsx` | Classifica a punti totali con pari merito |
+| `src/screens/GuestScreen.jsx` | Modalità ospite: solo nome della lega e classifica aggiornata, senza modifiche |
 | `public/sw.js` | Supporto per usare l'app senza connessione (cache v4) |
 | `public/manifest.webmanifest` | Installabile su telefono (icone normali e maskable) |
 

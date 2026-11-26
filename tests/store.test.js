@@ -87,3 +87,11 @@ describe('freeTeamName (B7)', () => {
     expect(freeTeamName([])).toBe('Squadra 1')
   })
 })
+
+describe('normalizeState: ruolo del telefono', () => {
+  it('accetta guest e torna admin in caso di valore strano', () => {
+    expect(normalizeState({ net: { url: 'https://x.firebaseio.com', room: 'r', enabled: true, role: 'guest' } }).net.role).toBe('guest')
+    expect(normalizeState({ net: { enabled: true, role: ' hacker ' } }).net.role).toBe('admin')
+    expect(normalizeState({}).net.role).toBe('admin')
+  })
+})

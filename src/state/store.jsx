@@ -46,7 +46,7 @@ function defaultState() {
     purchases: [],
     auctionLot: null,
     auctionDone: false,
-    net: { url: '', room: '', enabled: false },
+    net: { url: '', room: '', enabled: false, role: 'admin' },
     rev: 0,
   }
 }
@@ -167,6 +167,8 @@ export function normalizeState(raw) {
       url: typeof net.url === 'string' ? net.url : '',
       room: typeof net.room === 'string' ? net.room : '',
       enabled: Boolean(net.enabled),
+      // Il ruolo è di questo telefono, non della lega: admin = tutto, guest = solo lettura.
+      role: net.role === 'guest' ? 'guest' : 'admin',
     },
     rev: Number(raw.rev) || 0,
   }
@@ -203,6 +205,8 @@ export function StateProvider({ children }) {
     }
     if (applyingRemote.current) return
     if (!state.net.enabled || !syncConfigured(state.net)) return
+    // Gli ospiti leggono ma non scrivono mai sulla stanza.
+    if (state.net.role === 'guest') return
     clearTimeout(pushTimer.current)
     pushTimer.current = setTimeout(() => {
       pushInFlight.current = true

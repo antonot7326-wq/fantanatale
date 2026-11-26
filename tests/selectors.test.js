@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { creditsLeft, playersOfTeam, isAuctionComplete, rosterSize } from '../src/state/selectors'
+import { creditsLeft, playersOfTeam, isAuctionComplete, rosterSize, standings } from '../src/state/selectors'
 
 const makeState = (over = {}) => ({
   config: { budget: 100, formationSize: 2, rosterSize: 3 },
@@ -66,5 +66,41 @@ describe('isAuctionComplete', () => {
   })
   it('vera se l\u2019asta è stata terminata a mano', () => {
     expect(isAuctionComplete(makeState({ auctionDone: true }))).toBe(true)
+  })
+})
+
+describe('standings', () => {
+  const mk = () => ({
+    config: { startDate: '2026-12-24', endDate: '2026-12-25' },
+    teams: [
+      { id: 't1', name: 'Rossi' },
+      { id: 't2', name: 'Bianchi' },
+      { id: 't3', name: 'Verdi' },
+    ],
+    results: {
+      '2026-12-24': { details: { t1: { total: 80 }, t2: { total: 90 }, t3: { total: 80 } } },
+    },
+  })
+
+  it('ordina per punti decrescenti', () => {
+    const { rows } = standings(mk())
+    expect(rows.map((r) => r.team.name)).toEqual(['Bianchi', 'Rossi', 'Verdi'])
+  })
+
+  it('pari merito: stessa posizione per punti uguali', () => {
+    const { rows } = standings(mk())
+    expect(rows.find((r) => r.team.name === 'Bianchi').position).toBe(1)
+    expect(rows.find((r) => r.team.name === 'Rossi').position).toBe(2)
+    expect(rows.find((r) => r.team.name === 'Verdi').position).toBe(2)
+  })
+
+  it('somma solo le giornate calcolate', () => {
+    const s = mk()
+    s.results['2026-12-25'] = { details: { t1: { total: 50 } } }
+    const { rows, computed } = standings(s)
+    expect(computed).toHaveLength(2)
+    expect(rows.find((r) => r.team.name === 'Rossi').points).toBe(130)
+    expect(rows.find((r) => r.team.name === 'Rossi').played).toBe(2)
+    expect(rows.find((r) => r.team.name === 'Bianchi').played).toBe(1)
   })
 })

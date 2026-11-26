@@ -147,7 +147,7 @@ function NetworkCard({ net, netStatus, setNetStatus, syncStatus }) {
   const setUrl = (value) => update((s) => ({ ...s, net: { ...s.net, url: value, enabled: false } }))
   const setRoom = (value) => update((s) => ({ ...s, net: { ...s.net, room: value.trim(), enabled: false } }))
 
-  const activate = async () => {
+  const activate = async (role = 'admin') => {
     const url = net.url.trim()
     if (!url || !net.room.trim()) {
       dialog.alert('Scrivi l’indirizzo del database e il nome della stanza.', { title: 'Mancano i dati' })
@@ -167,20 +167,30 @@ function NetworkCard({ net, netStatus, setNetStatus, syncStatus }) {
     try {
       const remote = await pullState(net)
       if (remote && (remote.players?.length || remote.teams?.length)) {
-        const ok = await dialog.confirm(
-          'La stanza esiste già e contiene una lega. La carico su questo telefono?',
-          { confirmLabel: 'Sì, caricala', cancelLabel: 'Non cambiare niente' },
-        )
-        if (!ok) {
-          setNetStatus(null)
-          return
+        if (role === 'guest') {
+          // L'ospite copia la lega in sola lettura, senza domande e senza sovrascritture
+          // sulla stanza: non scriverà mai.
+          replaceState(remote)
+        } else {
+          const ok = await dialog.confirm(
+            'La stanza esiste già e contiene una lega. La carico su questo telefono?',
+            { confirmLabel: 'Sì, caricala', cancelLabel: 'Non cambiare niente' },
+          )
+          if (!ok) {
+            setNetStatus(null)
+            return
+          }
+          replaceState(remote)
         }
-        replaceState(remote)
+      } else if (role === 'guest') {
+        setNetStatus(null)
+        dialog.alert('La stanza è ancora vuota: collega prima il telefono dell’organizzatore. Poi riprova.', { title: 'Stanza vuota' })
+        return
       } else {
-        await pushState(net, { ...state, net: { ...net, enabled: true }, rev: Date.now() })
+        await pushState(net, { ...state, net: { ...net, enabled: true, role }, rev: Date.now() })
       }
-      update((s) => ({ ...s, net: { ...s.net, enabled: true } }))
-      setNetStatus('ok: i telefoni sono collegati')
+      update((s) => ({ ...s, net: { ...s.net, enabled: true, role } }))
+      setNetStatus(role === 'guest' ? 'ok: questo telefono mostra solo nome e classifica' : 'ok: i telefoni sono collegati')
     } catch (e) {
       setNetStatus(null)
       dialog.alert('Connessione non riuscita: controlla l’indirizzo del database. (' + e.message + ')', { title: 'Connessione fallita' })
@@ -188,7 +198,7 @@ function NetworkCard({ net, netStatus, setNetStatus, syncStatus }) {
   }
 
   const deactivate = () => {
-    update((s) => ({ ...s, net: { ...s.net, enabled: false } }))
+    update((s) => ({ ...s, net: { ...s.net, enabled: false, role: 'admin' } }))
     setNetStatus(null)
   }
 
@@ -197,7 +207,7 @@ function NetworkCard({ net, netStatus, setNetStatus, syncStatus }) {
       title="Gioco tra i telefoni"
       actions={
         net.enabled ? (
-          syncStatus?.error ? <Pill tone="bad">errore di sincronizzazione</Pill> : <Pill tone="good">collegati</Pill>
+          syncStatus?.error ? <Pill tone="bad">errore di sincronizzazione</Pill> : <Pill tone="good">collegati ({net.role === 'guest' ? 'ospite' : 'admin'})</Pill>
         ) : null
       }
     >
@@ -207,6 +217,7 @@ function NetworkCard({ net, netStatus, setNetStatus, syncStatus }) {
             Tutti i telefoni con lo stesso indirizzo e la stessa stanza vedono la stessa lega,
             aggiornata da sola ogni pochi secondi. Nessun file da spostare.
           </p>
+          {net.role === 'guest' && <p className="warn">Questo telefono è collegato come ospite: mostra solo il nome della lega e la classifica, non può modificare niente.</p>}
           {syncStatus?.error && <p className="warn">Ultimo aggiornamento non riuscito: {syncStatus.error}. Riprovo da solo tra poco.</p>}
           <div className="btn-row">
             <Button variant="danger" onClick={deactivate}>Scollega questo telefono</Button>
@@ -224,8 +235,13 @@ function NetworkCard({ net, netStatus, setNetStatus, syncStatus }) {
             </Field>
           </div>
           <div className="btn-row">
-            <Button variant="primary" onClick={activate}>Collega questo telefono</Button>
+            <Button variant="primary" onClick={() => activate('admin')}>Collega come organizzatore</Button>
+            <Button onClick={() => activate('guest')}>Collega come ospite</Button>
           </div>
+          <p className="note">
+            Organizzatore: controllo di tutto (asta, formazioni, giornate). Ospite: vede solo
+            il nome della lega e la classifica aggiornata, senza poter toccare niente.
+          </p>
           <p className="note">
             {netStatus ? `Stato: ${netStatus}. ` : ''}Guida: console.firebase.google.com → nuovo progetto →
             Realtime Database → crea → copia l'URL qui sopra. Nei permessi imposta leggi e scrivi = true durante le feste.

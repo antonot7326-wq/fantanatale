@@ -7,6 +7,7 @@ import AuctionScreen from './screens/AuctionScreen'
 import LineupsScreen from './screens/LineupsScreen'
 import MatchdaysScreen from './screens/MatchdaysScreen'
 import StandingsScreen from './screens/StandingsScreen'
+import GuestScreen from './screens/GuestScreen'
 import SetupScreen from './screens/SetupScreen'
 import RulesScreen from './screens/RulesScreen'
 import { IconHome, IconTeams, IconAuction, IconCalendar, IconTrophy, IconGear, IconSun, IconMoon } from './ui/icons'
@@ -86,7 +87,7 @@ class ErrorBoundary extends Component {
 }
 
 function Shell() {
-  const { state } = useApp()
+  const { state, update } = useApp()
   const [view, setView] = useState(viewFromHash)
   const [theme, setTheme] = useState(preferredTheme)
   const hasController = useRef(Boolean(navigator.serviceWorker?.controller))
@@ -135,6 +136,15 @@ function Shell() {
   const secondary = view === 'setup' || view === 'rules' || view === 'lineups'
   const View = VIEWS[view] ?? HomeScreen
   const netOn = state.net.enabled
+
+  // Modalità ospite: solo nome della lega e classifica, aggiornati da soli.
+  if (netOn && state.net.role === 'guest') {
+    return (
+      <GuestScreen
+        onExit={() => update((s) => ({ ...s, net: { ...s.net, enabled: false, role: 'admin' } }))}
+      />
+    )
+  }
 
   return (
     <div className="app">
