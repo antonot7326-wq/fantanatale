@@ -67,9 +67,13 @@ npm run build      # crea la cartella dist/
 La cartella `dist/` è statica e funziona su qualunque hosting (GitHub Pages, Netlify, Vercel,
 un NAS, una chiavetta servita localmente). I percorsi sono relativi, quindi funziona anche in sottocartelle.
 
-## Installazione come app
-Con la pagina pubblicata, sul telefono conviene «Aggiungi alla schermata Home»:
-l'app parte a schermo intero, senza barra del browser, e funziona anche senza connessione.
+## Installazione come app (Android e iPhone)
+Niente store, niente account: l'app è una PWA e si installa dalla pagina web.
+- **Android (Chrome)**: apri il sito, tocca i tre puntini in alto a destra → «Aggiungi alla schermata Home» oppure «Installa app». Nella Home dell'app compare anche il pulsante «Installa FantaNatale» quando il browser lo permette.
+- **iPhone (Safari, obbligatorio Safari)**: apri il sito, tocca il pulsante Condividi (il quadratino con la freccia) → «Aggiungi alla schermata Home».
+
+In entrambi i casi l'app parte a schermo intero con la sua icona, come le altre app, e funziona anche senza connessione.
+Se non vedi la card con l'installazione in Home, vuol dire che l'app è già installata.
 
 ## Struttura del codice
 Vedi [docs/STRUCTURE.md](docs/STRUCTURE.md): ogni parte è un file piccolo e isolato, pensato per essere letto e modificato separatamente.

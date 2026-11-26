@@ -3,6 +3,7 @@ import { useApp } from '../state/store'
 import { creditsLeft, isAuctionComplete } from '../state/selectors'
 import { Card, Pill, Button } from '../ui/parts'
 import { dateRange, formatDate, isToday, scheduleForDate } from '../lib/schedule'
+import InstallCard from './InstallCard'
 
 export default function HomeScreen({ onNavigate }) {
   const { state } = useApp()
@@ -89,6 +90,8 @@ export default function HomeScreen({ onNavigate }) {
       )}
 
       {creditsSummary(state)}
+
+      <InstallCard />
     </main>
   )
 }

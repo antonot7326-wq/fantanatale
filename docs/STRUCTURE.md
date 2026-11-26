@@ -32,6 +32,7 @@ Ogni parte è un file piccolo e separato, così è facile capire e modificare un
 | File | Contenuto |
 |---|---|
 | `src/screens/HomeScreen.jsx` | Home: prossima giornata, azioni rapide, stato della lega |
+| `src/screens/InstallCard.jsx` | Card «Metti l'app sul telefono»: pulsante di installazione su Android, istruzioni passo-passo su iPhone |
 | `src/screens/SetupScreen.jsx` | Impostazioni della lega + sincronizzazione + esporta/importa/azzeramento |
 | `src/screens/TeamsEditor.jsx` | Solo la lista delle squadre |
 | `src/screens/RoseScreen.jsx` | Tab Rose: giocatori liberi + rosa di ogni squadra, forza di ogni giocatore |
