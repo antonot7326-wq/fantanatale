@@ -2,13 +2,14 @@ name: Pubblica su GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, vibe/fantanatale-prototipo-831fdf]
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  administration: write
 
 concurrency:
   group: pages
@@ -20,6 +21,10 @@ jobs:
     steps:
       - name: Scarica il codice
         uses: actions/checkout@v4
+      - name: Attiva Pages se necessario
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Installa Node
         uses: actions/setup-node@v4
         with:
