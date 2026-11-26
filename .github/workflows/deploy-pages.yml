@@ -2,7 +2,7 @@ name: Pubblica su GitHub Pages
 
 on:
   push:
-    branches: [main, vibe/fantanatale-prototipo-831fdf]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -29,6 +29,8 @@ jobs:
           cache: npm
       - name: Installa dipendenze
         run: npm ci
+      - name: Test
+        run: npm test
       - name: Crea la build
         run: npm run build
       - name: Prepara l'artefatto
